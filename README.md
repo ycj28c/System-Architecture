@@ -42,8 +42,12 @@ Web UI
 * [Measure Resource Loading Times](https://developers.google.com/web/tools/chrome-devtools/network-performance/resource-loading#resource-network-timing)
 * [Mastering the :nth-child](http://nthmaster.com/)
 
+DataBase
+---------
+* [Understanding Postgres Performance](http://www.craigkerstiens.com/2012/10/01/understanding-postgres-performance/)
+
 Security
---------
+---------
 * [An Introduction to Content Security Policy](https://www.html5rocks.com/en/tutorials/security/content-security-policy/)
 
 Linux
