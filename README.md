@@ -10,12 +10,17 @@ Algorithm
 ---------
 * [HUFFMAN 编码压缩算法](https://coolshell.cn/articles/7459.html)
 
+Common Programming
+------------------
+* [Google Java编程风格指南](http://www.hawstein.com/posts/google-java-style.html)
+
 Java
 ---------
 * [Java 流(Stream)、文件(File)和IO](http://www.runoob.com/java/java-files-io.html)
 * [Java 正则表达式](wiki.jikexueyuan.com/project/java/regular-expressions.html)
 * [OutOfMemoryError](https://eyalsch.wordpress.com/2009/06/17/oome/)
 * [Custom annotations in Java](https://softwarecave.org/2014/05/02/custom-annotations-in-java/)
+* [設計模式筆記](https://rongli.gitbooks.io/design-pattern/content/index.html)
 
 Node.js
 --------
@@ -45,6 +50,7 @@ Web UI
 DataBase
 ---------
 * [Understanding Postgres Performance](http://www.craigkerstiens.com/2012/10/01/understanding-postgres-performance/)
+* [PostgreSQL性能调优笔记一系统篇](https://blog.hackroad.com/operations-engineer/linux_server/13167.html)
 
 Security
 ---------
@@ -61,3 +67,5 @@ Logs
 Devops
 ---------
 * [Getting started with Chef](http://gettingstartedwithchef.com/first-steps-with-chef.html)
+* [Writing a Notifier Plugin for Jenkins](http://code.hootsuite.com/how-to-write-a-jenkins-plugin/)
+* [chef之道](https://blackanger.gitbooks.io/tao-of-chef/chapter_1_chef/index.html)
