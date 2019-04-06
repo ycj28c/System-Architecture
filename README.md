@@ -69,3 +69,7 @@ Devops
 * [Getting started with Chef](http://gettingstartedwithchef.com/first-steps-with-chef.html)
 * [Writing a Notifier Plugin for Jenkins](http://code.hootsuite.com/how-to-write-a-jenkins-plugin/)
 * [chef之道](https://blackanger.gitbooks.io/tao-of-chef/chapter_1_chef/index.html)
+
+Image
+---------
+* [浅谈SVG及矢量图在Android的应用](https://www.jianshu.com/p/977147b8f3eb)
