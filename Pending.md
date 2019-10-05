@@ -30,3 +30,7 @@ https://blog.csdn.net/lihao21/article/details/54193868
 
 
 Service Mesh ？
+
+GFS: google file system
+這裏有詳細描寫，但是比較繁瑣了，較常用的是hadoop家族的HDFS
+https://mr-dai.github.io/gfs/
