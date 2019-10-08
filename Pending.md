@@ -34,4 +34,10 @@ Service Mesh ？
 Google MapReduce 加上 Google File System 这两篇论文可谓是大数据时代的开山之作，与 Google BigTable 并称 Google 的三架马车
 GFS: google file system
 這裏有詳細描寫，但是比較繁瑣了，較常用的是hadoop家族的HDFS
+
+Long-Polling vs WebSockets vs Server-Sent Events
+Long polling or short polling(client pull)
+WebSocket(server push)
+Server-Sent Events(server push)
+https://blog.csdn.net/bell10027/article/details/89199762
 https://mr-dai.github.io/gfs/
