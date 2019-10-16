@@ -41,3 +41,6 @@ WebSocket(server push)
 Server-Sent Events(server push)
 https://blog.csdn.net/bell10027/article/details/89199762
 https://mr-dai.github.io/gfs/
+
+rating algorithm system
+Glicko rating system: https://en.wikipedia.org/wiki/Glicko_rating_system
