@@ -44,3 +44,5 @@ https://mr-dai.github.io/gfs/
 
 rating algorithm system
 Glicko rating system: https://en.wikipedia.org/wiki/Glicko_rating_system
+
+Firebase
