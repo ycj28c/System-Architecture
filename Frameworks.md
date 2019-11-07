@@ -64,6 +64,8 @@ Spark
 ### Data ?
 Kafka (Message queue to provide reliable data for complex system)  
 [kafka解决了什么问题?](https://www.zhihu.com/question/53331259)  
+就是可以处理不同种类数据类型的消息queue，通过集群管理
+基本术语包括producer，consumer，broker，topic，partition，replica
 
 ### Design
 Sketch 專用製圖做圖標和設計  
