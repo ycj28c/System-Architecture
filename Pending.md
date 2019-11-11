@@ -33,7 +33,13 @@ Service Mesh ？
 
 Google MapReduce 加上 Google File System 这两篇论文可谓是大数据时代的开山之作，与 Google BigTable 并称 Google 的三架马车
 GFS: google file system
-這裏有詳細描寫，但是比較繁瑣了，較常用的是hadoop家族的HDFS
+這裏有詳細描寫，但是比較繁瑣了，較常用的是hadoop家族的HDFS  
+
+Monolith VS Microservice  
+Microservice: 易于scale，易于大项目分工，易于同步开发，不易设计，需要更多时间develop  
+Monolith: 运行较快，难于新手入门，需要频繁deploy，一宕机就全宕
+
+
 
 Long-Polling vs WebSockets vs Server-Sent Events
 Long polling or short polling(client pull)
