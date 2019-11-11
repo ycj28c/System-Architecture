@@ -56,4 +56,6 @@ Firebase 是一個同時支援 Android、iOS 及網頁的 app 雲端開發平台
 提供了以下功能，包含所有的后端，开发者只管写应用即可。  
 实时数据库（Realtime database），用户认证（Authentication），自定义API（Cloud function），消息推送（Cloud messaging），静态网页（Hosting），云存储（Cloud storage），此外还提供了强大的用户分析，测试等功能，容易学开发快。
 
-
+Monolith VS Microservice  
+Monolith: 运行速度快，代码易于重用，适合小团队开发，需要频繁deploy，难于新人上手，一宕机全down  
+Microservice: 易于scale，易于大项目分工，可以同步开发，模块多难于设计，需要更多develop时间，  
