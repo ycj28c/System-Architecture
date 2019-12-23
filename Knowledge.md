@@ -10,6 +10,7 @@ Algorithm
 ---------
 * [HUFFMAN 编码压缩算法](https://coolshell.cn/articles/7459.html)
 * [漫画：什么是SnowFlake算法](https://blog.csdn.net/bjweimengshu/article/details/80162731)
+* [漫画：如何实现抢红包算法](https://mp.weixin.qq.com/s?__biz=MzIxMjE5MTE1Nw==&mid=2653193719&idx=1&sn=64f184d36af9ef6393998fe5ea79329c&chksm=8c99f72dbbee7e3b3f00e067613c15144ce3624782161bd668ac57943d6aa198f1cebed8a050&scene=21#wechat_redirect)
 
 Common Programming
 ------------------
