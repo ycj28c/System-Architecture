@@ -9,6 +9,7 @@ lucene
 Algorithm
 ---------
 * [HUFFMAN 编码压缩算法](https://coolshell.cn/articles/7459.html)
+* [漫画：什么是SnowFlake算法](https://blog.csdn.net/bjweimengshu/article/details/80162731)
 
 Common Programming
 ------------------
