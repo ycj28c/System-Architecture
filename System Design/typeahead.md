@@ -112,7 +112,7 @@ BigO：在遍历的复杂度仅为O(L搜索单次的长度), Space是O(NL)
 可以个性化设置高权重query和TopK的值。如果
 
 
-哇，细想的话涉及的东西真是不少
+哇，细想的话涉及的东西真是不少。
 
 ## Reference
 1. [Google系统设计面试题--设计一个auto complete 系统(type ahead系统)](http://www.noteanddata.com/interview-problems-system-design-learning-notes-autocomplete.html)  
