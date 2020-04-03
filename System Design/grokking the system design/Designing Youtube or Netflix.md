@@ -57,11 +57,12 @@ streamVideo(api_dev_key, video_id, offset, codec, resolution)
 返回的是stream，也就是在某个offset的视频chunk
 
 ### 高级设计
-1. Processing Queue： 每个上传的视频都会先放入queue中，等轮到了再进行后续的encode，生成thumbnai，存储等
-2. Encoder： 将一个视频转换为多种格式
-3. Thumbnails generator： 生成视频信息
-4. Video and Thumbnail storage： 将视频和缩图存放到分布式系统
-5. User Database： 存放用户信息，比如name，email等
+这个其实说白就是要画图说明整个流程：  
+1. Processing Queue：每个上传的视频都会被发送到queue里面等待被deque和encoding，thumbnail generation和storage
+2. Encoder：将视频encode为多重formats
+3. Thumbnails generator：生成快照视频用于快速展示
+4. Video and Thumbnail storage：将视频和快照视频存储到分布式存储系统
+5. User Database：存储用户信息比如name，email，address之类
 6. Video metadata storage： 视频元数据库，记录格式化的数据比如title, file path，uploading user, total views等，还有所有的comments
 
 ### 数据库设计
@@ -94,3 +95,13 @@ Age
 Registration Detail  
 
 ### 详细设计
+因为服务的读取比重很高，所以需要我们要设计一个能快检索视频系统。预期是200：1读写比例。
+
+Where would videos be stored？视频存储在文件系统比如HDFS和GlusterFS(这个没有深入了解过，TODO)
+
+How should we efficiently manage read traffic？ 我们要分离读和写。因为我们会有视频的多个拷贝，所以我们可以将读写分布到不同的服务。对于metadata，可以使用master-slave设置，这样writes就会先到master然后应用到全部的slaves去。这样的设置可能会导致视频过期问题，比如，当一个新视频加入了，metadata先插入了master，在应用到slave之前slave都是无法看到该视频的； 因此slave不会返回realtime数据。 但是这个staleness对于这个视频系统是可以接受的，因为这个同步的时间会很短。
+
+Where would thumbnails be stored？ 系统将生成比元视频数量更多的thumbnails。 如果我们假设每个视频有5个thumbnails，我们就需要一个非常高效的存储系统来处理大量的读取流量。 主要有两个考虑点：  
+
+
+
