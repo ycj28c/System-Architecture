@@ -10,7 +10,7 @@ NoSQL:
 主要分为四种：  
 * Key-Value Stores -- 就是key-value pair，常见的有Redis, Voldemort, and Dynamo  
 * Document Databases -- 数据以document形式存放，每个文档包含整个entity，常见的有CouchDB and MongoDB  
-* Wide-Column Databases（宽列存储） -- 说白了普通行式数据通用SortedMap<String, String>存放，而列式数据库就是用类似Sorted<String, Sorted<String, String>>来存放。常见的有Cassandra和HBase  
+* Wide-Column Databases（宽列存储） -- 说白了普通行式数据通用SortedMap<String, String>存放每row，而列式数据库就是用类似SortedMap<String, SortedMap<String, String>>来存放row数据。常见的有Cassandra和HBase  
 * Graph Databases -- 用图结构存储数据，有vertax,node等。应用场景主要是递归类型的，比如朋友的朋友的朋友的朋友，关系越多，相对普通关系型数据库越快。在商品数据库中，我们查询某个客户买了哪些商品通常效率比较高，但是我们要查询”那些客户买了这个商品”就会比较慢，因为需要全表遍历。常见的有Neo4J和InfiniteGraph。
 
 
