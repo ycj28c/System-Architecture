@@ -126,5 +126,24 @@ Sharding based on UserID：我们可以存储所有一个用户的数据到一�
 
 Sharding based on VideoID：可以hash VideoID来随机的存储视频元数据。同样也需要中央服务器来合并和rank结果，问题是个别popular的视频也会导致性能问题。我们也可以进一步通过cache来存储热门视频。
 
+### 视频备份Video Deduplication
+当上传了很多视频，就会出现大量的重复视频。会出现以下问题：浪费空间，cache的有效率下降，重复视频浪费网络usage等等。  
+这里需要一个matching algorithms（TODO 比如Block Matching，Phase Correlation等）来找出重复。很显然如果已经存在了，就停止上传了。如果发现新视频是已知视频的subpart，那么可以将现有视频分解为多个chunks。
+
+### 负载均衡Load Balancing
+应该使用Consistent Hashing来做cache服务，这样才能平衡load。但是不同视频有不同popularity，解决这个问题可以让busy服务器redirect用户到不busy的服务器。可以通过dynamic HTTP来做redirection。  
+然而，redirection也有缺点。首先，被redirect的服务器可能不能播放。而且，每个redirction都需要额外的HTTP request，会导致高延迟。跨数据中心redirection可能把用户转到遥远的cache服务器去，因为cache服务器只有少数几个。
+
+### 缓存Cache
+为了服务全球用户，需要将内容content推送到世界各地的视频服务器去。为了提高性能，我们可以对metadata服务器的热门数据进行cache。使用Memcache来缓存数据，通过使用Least Recently Used（LRU）算法是个很好的选择。  
+怎么让cache更机智？通常使用80-20法则，20%的视频产品80%的流量，所以我们可以尝试cache 20%的数据。
+
+### Content Delivery Network（CDN）
+我们可以将popular的视频发送给CDNs服务商来处理：  
+CDNs可以将内存replicate到不同的地方，所以用户可以经过少量的hops访问到视频。而且CDN大量使用caching所以更快。访问量较小的（比如1-20 views每天）就不需要cache到CDNs了。
+
+### Fault Tolerance
+我们使用Consistent Hasing来分布数据库服务。Consistent hasing不仅能替换dead server，还能帮助平衡负载。
+
 
 
