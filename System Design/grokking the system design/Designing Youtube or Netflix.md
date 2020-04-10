@@ -66,7 +66,7 @@ streamVideo(api_dev_key, video_id, offset, codec, resolution)
 6. Video metadata storage： 视频元数据库，记录格式化的数据比如title, file path，uploading user, total views等，还有所有的comments
 
 ### 数据库设计
-主要是metadata storage的设计，可以如下：
+主要是metadata storage的设计（关系型数据库比如mysql），可以如下：
 
 Videos表:  
 VideoID  
@@ -94,6 +94,8 @@ Address
 Age  
 Registration Detail  
 
+YouTube走过了单机，主从，水平切分的过程。
+
 ### 详细设计
 因为服务的读取比重很高，所以需要我们要设计一个能快检索视频系统。预期是200：1读写比例。
 
@@ -107,7 +109,7 @@ Where would thumbnails be stored？ 系统将生成比元视频数量更多的th
 
 所以需要估计下缩图的存储状况。因为有大量的缩略图，所以也需要在不同的location进行读取，这样不是很有效，会导致高延迟。
 
-Bigtable(TODO)将会是一个合理的选择，因为bigtable会合并很多文件到一个block，很适合高效的读取小量数据。因为缩图很小，所以也可以将热门的缩图放入cache中去，也能提升延迟表现。
+Bigtable将会是一个合理的选择，因为bigtable会合并很多文件到一个block，很适合高效的读取小量数据。因为缩图很小，所以也可以将热门的缩图放入cache中去，也能提升延迟表现。就是用单独的集群存储预览图。
 
 Video Uploads: 因为视频文件很大，我们要支持断点续传resuming from same point
 
@@ -116,7 +118,7 @@ Video Encoding： 新上传文件存入服务器的同时会添加一个encode v
 【此处要画出完整结构图】
 
 ### 元数据分片Metadata Sharding
-因为我们每天都有大量的新视频，而且读取load特别高，所以，需要把数据分布到多个机器。这里有多种分片数据shard的方案：
+但用户量大增比如数百万甚至数十亿用户，我们每天都有大量的新视频，而且读取load特别高，所以要考虑扩展性。这里有多种分片数据shard的方案：
 
 Sharding based on UserID：我们可以存储所有一个用户的数据到一个服务器。具体做法就是利用UserID来做hash来存储。读取的时候就再使用hash function来找到该用户的服务器及数据。但是如果通过title来搜索视频就需要遍历所有的服务器，而且每个服务器都可能返回一系列视频。会需要中央服务器来合并和rank结果。  
 这样有几个问题：  
@@ -128,11 +130,12 @@ Sharding based on VideoID：可以hash VideoID来随机的存储视频元数据�
 
 ### 视频备份Video Deduplication
 当上传了很多视频，就会出现大量的重复视频。会出现以下问题：浪费空间，cache的有效率下降，重复视频浪费网络usage等等。  
-这里需要一个matching algorithms（TODO 比如Block Matching，Phase Correlation等）来找出重复。很显然如果已经存在了，就停止上传了。如果发现新视频是已知视频的subpart，那么可以将现有视频分解为多个chunks。
+这里需要一个matching algorithms（比如Block Matching，Phase Correlation等，就是视频匹配检测算法，不用掌握）来找出重复。很显然如果已经存在了，就停止上传了。如果发现新视频是已知视频的subpart，那么可以将现有视频分解为多个chunks。
 
 ### 负载均衡Load Balancing
 应该使用Consistent Hashing来做cache服务，这样才能平衡load。但是不同视频有不同popularity，解决这个问题可以让busy服务器redirect用户到不busy的服务器。可以通过dynamic HTTP来做redirection。  
-然而，redirection也有缺点。首先，被redirect的服务器可能不能播放。而且，每个redirction都需要额外的HTTP request，会导致高延迟。跨数据中心redirection可能把用户转到遥远的cache服务器去，因为cache服务器只有少数几个。
+然而，redirection也有缺点。首先，被redirect的服务器可能不能播放。而且，每个redirction都需要额外的HTTP request，会导致高延迟。跨数据中心redirection可能把用户转到遥远的cache服务器去，因为cache服务器只有少数几个。  
+在Web端的负载有Nginx，NetScala等。
 
 ### 缓存Cache
 为了服务全球用户，需要将内容content推送到世界各地的视频服务器去。为了提高性能，我们可以对metadata服务器的热门数据进行cache。使用Memcache来缓存数据，通过使用Least Recently Used（LRU）算法是个很好的选择。  
@@ -145,5 +148,7 @@ CDNs可以将内存replicate到不同的地方，所以用户可以经过少量�
 ### Fault Tolerance
 我们使用Consistent Hasing来分布数据库服务。Consistent hasing不仅能替换dead server，还能帮助平衡负载。
 
+### 安全问题
+比如破解观看数和恶意刷流量之类。最直接的方法是，如果一个特定的 IP 发出太多的请求，只是阻止它。或者我们甚至可以限制每个 IP 的观看次数。系统还可以检查浏览器代理和用户过去的历史记录等信息，这可能会阻止很多黑客行为。另外进行用户行为观察，例如，观看次数较多但参与程度较低的视频非常可疑。
 
 

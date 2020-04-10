@@ -9,3 +9,8 @@ BigTable是Google的一个论文，Google BigTable是一个分布式，结构化
 Google官方的bigtable，[Cloud Bigtable](https://cloud.google.com/bigtable），其实也和Hbase一样，都是按照白皮书写的。另外，Hbase是一个产品，而Google Bigtable是直接提供服务了，就不用考虑服务器啥的了，直接用就行。
 
 具体参考指南https://cloud.google.com/bigtable/docs/quickstarts
+
+Bigtable将数据统统看成无意义的字节串，客户端需要将结构化和非结构化数据串行化再存入Bigtable。所以在youtube的设计提到用Bigtable存储缩略图，因为是列式的，所以缩略图存储位置接近。
+
+[HBase实操 | 如何使用HBase存储图片](https://yq.aliyun.com/articles/670092)
+[理解BigTable](https://lianhaimiao.github.io/2018/03/19/%E7%90%86%E8%A7%A3BigTable/)
