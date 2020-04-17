@@ -8,7 +8,7 @@
 全名為 Amazon Virtual Private Cloud, 直譯翻譯的話接近Virtual(虛擬) Private(私有) Cloud(雲)。 就是将多台主机连接起来像局域网一样使用，对外可以就提供一台EC2的服务器端口。
 
 ## Amazon S3
-全名為 Simple Storage Service，就是大型网络存储，通过API访问文件，可以设置相应的权限之类。
+全名為 Simple Storage Service，就是大型网络存储，通过API访问文件，可以设置相应的权限之类。也可以用来托管静态网站，类似github blog用法。
 
 ## Amazon RDS
 全名為Amazon Relational Database Service，就是网络关系型数据库，当做MySQL来用吧。RDS服務主要有6個資料庫種類可以選擇，除了常見的MySQL、PostgreSQL、MariaDB，也有大型商業公司常用的Oracle與微軟旗下的MSSQL。當然Amazon也很喜歡用自己的規格綁架使用者，所以製作出了Amazon Aurora這個與MySQL共容的資料庫。
