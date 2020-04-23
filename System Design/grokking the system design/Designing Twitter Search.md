@@ -49,6 +49,30 @@ page_token(String)就是当前的分页了
 (1460 * 15) + 2.5MB \~= 21TB  
 假设一台服务器有144GB内存，那也需要152台服务器来存放这些index。
 
+3.Sharding based on the tweet object分片推特对象  
+主要是画图显示基本流程，用户请求发到LB，然后到Application servers，然后到Aggregator servers(作用相当于mapreduce)，Aggreator server可以分发到index server，也可以直接从database里头找。 总之当搜索一个word，要搜索所有服务器，每个服务器返回部分TweetID，中央服务器进行aggregate。
+
+### Fault Tolerance
+怎么解决单点故障？用replica啊。  
+但是如果primary和secondary都down了怎么办，就需要分配新服务器而且在该服务器重建index，但是如果我们使用Sharding based on tweet object的办法，我们并不知道那些words/Tweets应该存放在该服务器，这样就需要brute-force遍历整个database并用hash function找出需要的那些TweetIDs，这样需要很多时间来重建。 
+更有效的遍历tweets和index servers关联的方法是建立reverse index。 建立一个Hashtable，大概是HashTable<IndexServerId, Set<TweetID>>，这个信息保存在Index-Builder服务器。 这样便可以在index server快速删除tweetID。 通过这种方式，当index server需要重建的时候，只需要让index-Builder server提供对应的tweetID和index服务器的Mapping即可。 当然这个Index-Builder服务器也需要replica来保证fault tolerance。
+
+### Cache
+用于处理热门的tweet。 我们可以ishiyongMemcached，对于cache的Eviction plicy，使用LRU(Least Recently Used)方法最适合
+
+### Load Balancing
+此处应该画图，我们可以将LB加到两个地方：  
+1.Clients和Application servers之间  
+2.Application servers和Backend server之间  
+LB通常使用简单的Round Bobin方法，将负载均衡的分配给后台。 用Round Robin的另外一个好处是LB可以绕过dead server，但也有一个问题是Round Robin并不考虑服务器的实际Load，即使服务器很慢了，LB还是会发request过去。 为了解决这个问题，更智能的LB会自动检测服务器load并调整traffic。
+
+### Ranking
+如果我们想到对搜索结果分级，比如通过social graph distance，popularity，relevance分级，怎么做？ 
+建设我们要通过popularity来做rank，比如这个推特有多少个like，我们的ranking算法就可以计算出popularity number（根据like的数据etc）并且和word index存放在一起，每个分区都可以用popularity number进行排序O(NlogN)然后返回到aggreator server，然后aggreator server合并结果O(NK)，进行多路合并排序并返回top results。
+
+
+
+
 
 
 
