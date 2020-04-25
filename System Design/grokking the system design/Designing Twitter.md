@@ -105,3 +105,31 @@ PK(TweetID, UserID)
 关于选择SQL数据库还是NoSQL数据库，请看Designing Instagram --!
 
 ## Data Sharding
+因为我们每天都有大量的新推特，所以读的load特别高，必须将负载分布到多个机器中去。下面是集中分片方案：  
+
+*Sharding based on UserID*  
+我们可以存储所有某UsedID的数据在一个服务器。包括该用户的tweets，favorites，follows等，直接对userID使用hash function就可以，但是问题也很明显：  
+1.如果一个用户热门，那么对该服务器的读取量会很大，影响性能  
+2.有些用户的数据量可能特别多，造成维护困难  
+
+*Sharding based on TweetID*  
+就是针对TweetID进行hash，分布到随机服务器。在搜索的时候，需要查询所有服务器，每个服务器返回满足条件的结果，然后centralized server将结果进行aggregate并返回用户。这里用timeline生成为例：  
+1.首先application server找到这个用户的所有follows  
+2.App server发送query给数据库服务器，找到那些follows的所有tweets
+3.每个数据库找到这些推特，按照recency排序返回top的推特  
+4.App server合并结果和排序，并返回top结果给用户  
+
+这种方式解决了hot用户问题，但是比起Sharding by UserID，我们需要查询所有数据库分区来找到一个用户的推特，可能会导致高latencies。此外，我们还可以为hot推特进入cache（部署在数据库前）
+
+*Sharding based on Tweet creation time*  
+按照时间分片可以让我们更容易更快的找到top推特，因为我们只需要查询少量服务器。而问题就是traffic load过于集中，无法分摊。比如，在写数据时候，所有的推特都会写入1个服务器。
+
+*What if we can combine sharding by TweetID and Tweet creation time?*  
+（这一段比较重要）  
+可以同时按照推特creation time和TweetID来分片，这样可以快速的获得latest推特。所以这样要保证每个tweetID是universally unique的，并且每个推特数据都需要含有timestamp。  
+
+所以这里的tweetID就需要这么设计：包含两部分，第一部分表示epoch seconds，第二部分是自动生成的递增序列。这里存放epoch time是精确到秒，所以需要31bits来记录（为什么，因为86400 sec/day * 365 (days a year) * 50 (years) => 1.6B，而1.6B就是31bits)。对于auto incrementing sequence，我们期望1150条新推特每秒，所以可以分配17bits用来存储递增序列，2^17>=130K，完全足够，而且每秒钟都可以重置auto incrementing sequence。这样31bits+17bits就是48bit的TweetID。
+
+
+
+
