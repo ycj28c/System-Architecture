@@ -42,3 +42,66 @@ Extended Requirements
 此外我们还有media数据，假设每5条推特有1张图片，每10条推特有1个视频。 假设每个photo有200KB，每个Video的大小是2MB。那么每天需要的media存储是：  
 (100M/5 photos * 200KB) + (100M/10 videos * 2MB) \~= 24TB/day  
 
+*Bandwidth Estimates*  
+每天总共24TB数据，所以每秒钟290MB数据，我们需要28B的tweet-views每天，还需要展示图片和视频。假设用户3个视频只看1个，那么：  
+(28B * 280bytes)/86400s of text => 93MB/s  
++ (28B/5 * 200KB ) / 86400s of photos => 13GB/S  
++ (28B/10/3 * 2MB ) / 86400s of Videos => 22GB/s  
+Total \~= 35GB/s
+
+### System APIs
+我们可以用SOAP或者REST APIs来实现。下面是一个Posting推特的API
+```
+tweet(api_dev_key, tweet_data, tweet_location, user_location, media_id)
+```
+api_dev_key(String)：这个是用来表示注册账号的。  
+tweet_data(String)：这是推特文本，大概140个字。  
+tweet_location(String)：可选项，该推特选择的GPS位置(longtitude, latitude)  
+user_location(String)：可选项，用户的GPS位置(longtitude, latitude)  
+media_ids(number[])：可选项，该推特关联的图片或者视频文件等，会单独上传
+
+返回(String)是访问发送tweet的URL，否则返回HTTP error
+
+### High Level System Design
+此处需要画图  
+我们需要一个系统能有效的存储新的tweet，100M/86400s => 1150 tweets per second and read 28B/86400s => 325K tweets per second。所以这是一个read-heavy的系统。  
+
+我们需要多个application server来服务所有请求，appliation servers前面则需要load balance来负载均衡。在后端，我们需要一个高效的数据库存储所有推特，而且可以提供大量的读取。而且我们还需要一个file storage来存储图片和视频。
+
+尽管我们的期望是1亿写和280亿的读取量每天，所以平均我们的系统将受到大概1160的新推特和325K的读取请求每秒。这些流量在一天中比较平均，但是在高峰期可能有几千的写请求和1M的读请求。在具体设计的时候要记住这一点。
+
+### Database Schema
+数据库主要有下列表：  
+Tweet表：  
+TweetId：int(PK) 
+UserId：int  
+Content: varchar(140)  
+TweetLatitude: int  
+TweetLongtitude：int  
+UserLatitude: int  
+UserLongtitude: int  
+CreationDate：dateitme   
+NumFavorites：int  
+
+User：  
+UserID: int (PK)  
+Name: varchar(20)  
+Email: varchar(20)  
+DateOfBirth: datetime  
+CreateDate: datetime  
+LastLogin: datatime  
+
+UserFollow:  
+UserID1: int   
+UserID2: int  
+PK(UserID1, UserID2)  
+
+Favorite:  
+TweetID: int  
+UserID: int  
+CreateDate: datetime  
+PK(TweetID, UserID)  
+
+关于选择SQL数据库还是NoSQL数据库，请看Designing Instagram --!
+
+## Data Sharding
