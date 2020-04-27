@@ -130,6 +130,60 @@ PK(TweetID, UserID)
 
 所以这里的tweetID就需要这么设计：包含两部分，第一部分表示epoch seconds，第二部分是自动生成的递增序列。这里存放epoch time是精确到秒，所以需要31bits来记录（为什么，因为86400 sec/day * 365 (days a year) * 50 (years) => 1.6B，而1.6B就是31bits)。对于auto incrementing sequence，我们期望1150条新推特每秒，所以可以分配17bits用来存储递增序列，2^17>=130K，完全足够，而且每秒钟都可以重置auto incrementing sequence。这样31bits+17bits就是48bit的TweetID。
 
+### Cache
+我们可以在数据库层级前面增加cache服务器来cache热门的tweets和users。
+
+*Which cache replacement policy would best fit our needs?*  
+很显然Least Recently Used(LRU)是最适合的
+
+*How can we have a more intelligent cache?*  
+同样可以使用80-20 rule，20%的tweets生成了80%的traffic，所以我们需要cache 20%的每日数据(在每个shard分片)
+
+*What if we cache the lastest data?*  
+对于Tweet来说很适合，80%的用户只看最近3天的数据，所以我们可以只cache最近3天的数据。如果我们有专门的cache，用来cache所有用户3天的数据，那么光推特就有300million或者90G的数据量，这意味着需要100G的内存。这个数据量可以很简单的放入到一个服务器中，不过我们需要一个replicate减少单机负载。每当我们生成用户的timeline，都可以先请求cache服务器。  
+
+我们的cache和Hash table一样，key是OwnerID，value则是一个doubly linked list包括用户的所有推特。因为我们需要先显示最近的，所以新推特插入到双链的head，删除时候就删除双链的tail
+
+### Timeline Generation
+关于timeline生成，参考Designing Facebook's Newsfeed
+
+### Replication and Fault Tolerance
+因为是read-heavy系统，所以每个DB分区都需要secondary database，这个secondary server只用来读取，分担流量。所有写操作首先进入primary server，然后replicated到secondary servers。这样也能提供fault tolerance，因为只要primary server goes down，就可以failover到secondary。
+
+### Load Balancing
+我们可以在3个地方增加LB：  
+1.在用户和Application servers之间  
+2.在Application servers和数据库之间  
+3.在Aggregation servers和cache server之间  
+通常，使用简单的Round Robin方法就可以了，这种方法很容易应用且不会带来额外开销，而且当一个服务器down的时候，LB会吧traffic转移其他的服务器。而这种方法的问题在于Round Robin不会考虑各个服务器的负载，所以更聪明的LB会定期发送queries到服务器，检查各个服务器的load并且动态调整traffic。
+
+### Monitoring
+监控系统也很重要，我们需要收集下列metrics/counters，来把握系统性能：  
+1.多少个新推特每天/秒，峰值是多少  
+2.Timeline的delivery状态，多少推特被发送每天/秒  
+3.平均的latency是多少当用户刷新timeline  
+根据这些性能指标，我们就可以知道是否应该调整replication，LB或者cache
+
+### Extended Requirements
+*How do we serve feeds*  
+发送的推特的多少和用户follows的数据有关，也可以pre-generate feed来提高性能，具体请看Ranking and timeline generation在Designing Instagram部分
+
+*Retweet*   
+对于已经发送的Tweet Object，没必要存放所有实体，只需要存放ID就行
+
+*Trending Topics*  
+我们可以cache最近N秒内最流行的Hashtags或者search queries，保持更新状态每M秒。我们可以rank这些趋势话题，根据他们的frequency或者retweet或者likes，也可以根据需求调整权重weight。
+
+*Who to follow? How to give suggestions?*
+就是follow的推荐系统，可以用图找出2级或者3级的热门人数（follows多的人）进行推荐。如果可以推荐的人选不多，可以使用Machine Learning（ML）来shuffle和re-prioritize。ML的信号可以是最近某人的followship增加了，或者共同的following，或者共同的location和interest。
+
+*Moments*  
+从其他网站获取最近1-2小时的top news，搞清楚相关联的推特，并且进行prioritize和categorize，然后通过ML-supervised learning（专家训练）或者clustering提供Trending topics in Moments
+
+*Search*  
+搜索包括indexing，ranking还有retrieval(检索)，一种类似的方法可以参考Design Twitter Search
+
+
 
 
 
