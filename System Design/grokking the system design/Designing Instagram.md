@@ -38,6 +38,35 @@ Non-functional Requirement
 需要支持两个场景，一个是上传图片，另一个是查看和搜索图片。我们的服务器需要Object storage来存储照片，当然也需要数据库来存放图片的metadata信息。
 
 ### Database Schema
+我们需要存储用户数据，上传图片，follow的信息。Photo table存放所有和图片有关的信息，需要一个（PhotoID，CreationDate）的index用来快速存取，因为我们优先获取最近的图片。
+
+*Photo*  
+PhotoID: int (PK)  
+PhotoPath: varchar(256)  
+PhotoLatitude: int  
+PhotoLongtitude: int  
+UserLatitude: int  
+UserLongtitude: int  
+CreationDate: datetime  
+
+*User*  
+UserID: int (PK)  
+Name: varchar(20)  
+Email: varchar(32)  
+DateOfBirth: datetime  
+CreationDate: datetime  
+LastLogin: datetime  
+
+*UserFollow*  
+UserID1: int  
+UserID2: int
+PK: (UserID1, UserID2)
+
+最直接的方法就是用RDBMS比如MySQL，因为我们需要joins。但是关系型数据在scale方面比较困难，详细可以看SQL vs. NoSQL部分。我们可以存放上面的结构到分布式Key-value存储，所有的metadata可以放入table，key是PhotoID，value就是图片相关的Object，比如创建时间等。
+
+我们可以将photos存放到分布式文件存储比如HDFS或者S3
+
+我们需要存放将用户和图片的关系，也需要存放用户follow的list，这两个表我们都可以使用一个wide-column数据库比如Cassandra。对于UserPhoto表，key可以是UserID，value就是该ID所有的PhotoIDs列表，存放在不同的columns里面，同样的schema样式也可以用于UserFollow表。
 
 
 
