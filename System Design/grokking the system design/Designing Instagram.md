@@ -99,6 +99,34 @@ PhotoID(4bytes)+UserID(4bytes)+PhotoPath(256bytes)+PhotoLatitude(4bytes)+PhotoLo
 ### Reliability and Redundancy
 系统要求不能丢失文件，所以我们需要多个文件拷贝，一旦某个存储死了还可以从其他数据源获取。这个套路也适用于其他系统组成部分。如果我们想要高可用Availability，我们就需要多个replicas，这样的Redundancy冗余则会删除单点系统故障。
 
+如果只有一个服务要求可用，我们可以跑一个无流量的冗余服务，可以用来failover当primary出现问题。创建冗余可以移除单点故障，提供一个备份或者重大问题保险。
+
+说白了reliability就是冗余系统
+
+### Data Sharding
+a. Partitioning based on UserID  
+如果通过UserID来分片，如果一个DB shard是1TB，我们需要4个分片来存储所有3.7TB数据，考虑到更好的性能和扩展性，假设需要10个分片。所以大致的分片方法就是UserID%10。
+
+How can we generate PhotoIDs?  
+每个DB分片都可以有自增sequence来生成PhotoIDs，因我们我们把ShardID加入到了每个PhotoID中，所以也是唯一的
+
+What are the different issues with this partitioning schema?  
+1.热门用户，导致流量集中  
+2.个别用户拥有大量图片，导致存储不平衡  
+3.如果我们需要将某个User的图片存放在多个分片，可能造成latencies  
+4.将某个User的所有照片存放在一个分片造成unavailabilty问题，假如分片down或者高latency高load
+
+b. Partitioning based on PhotoID  
+如果我们先生成图片，然后再使用PhotoID%10分片就行。
+
+How can we generate PhotoIDs?  
+我们这里将使用一个单独的数据库实例来生成递增IDs，假如我们的PhotoID可以fit到64bits，那么可以就可以用一个table来只包含64bit ID field。
+
+Wonldn't this key generating DB be a single point of failure?  
+是的，解决方法就是用两个这样的databases，一个生成奇数IDs，一个生成偶数IDs。这个数据库的序列就可以做到。然后使用一个load balancer，使用round robin来轮询两个数据库来避免downtime。替代方法，可以用一个key生成器，具体参考Designing a URL Shortening service like TinyURL章节。
+
+How can we plan for the future growth of our system?  
+我们可以大量的逻辑分区来保证数据增长，比如一开始在单个物理数据库创建多个逻辑分区。因为每个数据库可以有多个实例，所以这一点很简单。当某个数据库有太多数据的时候，就将逻辑分区迁移到其他服务器中去，可以维护一个config file来进行逻辑分区到数据库的map，这样当移动分区的时候，只需要更新配置文件就可以。
 
 
 
