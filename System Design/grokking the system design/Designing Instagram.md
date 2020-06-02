@@ -128,5 +128,34 @@ Wonldn't this key generating DB be a single point of failure?
 How can we plan for the future growth of our system?  
 我们可以大量的逻辑分区来保证数据增长，比如一开始在单个物理数据库创建多个逻辑分区。因为每个数据库可以有多个实例，所以这一点很简单。当某个数据库有太多数据的时候，就将逻辑分区迁移到其他服务器中去，可以维护一个config file来进行逻辑分区到数据库的map，这样当移动分区的时候，只需要更新配置文件就可以。
 
+### Ranking and News Feed Generation
+我们需要获取最晚最热门的相关follows的用户图片来建立News Feed。假设我们为一个用户需要获取top 100的图片。我们的应用服务器首先会获取该用户的follows，然后获取每个follows最新的100个图片的metadata。最后，服务器将这些图片提交到ranking algorithm来决定要展示的top 100图片（根据新进度和喜爱程度等）并返回用户。一个有可能出现的问题就是这个方法可能高延迟，因为我们需要query多个表并sorting/merging/ranking结果。为了提高效率，我们需要预处理News Feed并将之存放到单独的table。
+
+Pre-generating the News Feed：  
+我们可以用一个单独的服务器持续不断的生成用户的News Feeds并存放在UserNewsFeed表中。任何用户Feed请求都只需要query这个表就行。
+
+What are the different approaches for sending News Feed contents to the users？  
+就是温习一下短轮询，长连接，websocket，SSEs  
+1.Pull：用户可以隔一段时间从服务器获取一下，可能请求结果是空白白浪费流量  
+2.Push：服务器主动给用户发，这就需要client保持Long Poll连接状态。但是如果用户的follows太多，服务器可能一直进行发送。  
+3.Hybrid：如果该用户的follows多就采用pull，如果follows少就用push的方式。另一种方式就是在固定时间进行push，减少流量
+
+具体可以参考Designing Facebook's Newsfeed章节
+
+### News Feed Creation with Shared Data
+News Feed最重要的一点就是要对于指定user，要或者所有follows的最新图片。我们需要一个根据创建时间排序的机制，为了提高效率，可以吧creation time作为PhotoID的一部分，这样就能快速获取最新图片ID。这样PhotoID就是两部分，第一部分表示纪元时间epoch time，第而部分就是自增长sequence。
+
+What could be the size of our PhotoID？  
+可以计算一下，如果需要50年，那么需要  
+```
+86400 sec/day * 365 (days a year) * 50 (years) => 1.6 billion seconds  
+```
+我们将会需要31bits来存放这个number。平均每秒有23个新图片，我们可以用9bits来存放自动增长序列，每秒我们可以存放2^9 >=512个新图片，我们可以每秒都重置这个9bits序列。更多的关于Data Sharding可以查看Designing Twitter章节
+
+### Cache and Load balancing
+我们服务器需要大规模图片发送系统来服务器全世界的用户。一个服务器通过地理图片cache server和CDNs来发送内容给用户。我们可以使用在metadata server端使用cache来记录最热门的数据，这里可以在数据库前使用Memcache，算法上LRU是一个合理的选择。
+
+How can we build more intelligent cache？  
+老规矩，采用80-20法则，20%的读取占用了80%的traffic，所以只需要cache每日20%的图片和metadata数据。
 
 
