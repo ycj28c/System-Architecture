@@ -1,0 +1,5 @@
+## Redundancy and Replication 笔记
+
+Redundancy就是将系统中关键部分进行duplication，从而增加系统的reliability。比如，如果只有一个文件存储和单一服务，一旦出问题就是丢失文件，会很糟糕。通常是fail over，当primary server出问题了，就自动fail over到secondary server。
+
+Replication就是sharing information来保证redundant resource之间的一致性，可以是软件或者硬件的组成部分。Replication在存储比如DBMS系统上应用比较多，比如primary-replica的主备应用。
