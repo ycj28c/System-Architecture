@@ -161,4 +161,65 @@ How would the server keep track of all the active reservation that haven't been 
 我们需要两个守护进程服务，1个用来跟踪所有的有效reservation和删除过期reservation，叫做ActiveReservationService。另外一个服务用来跟踪所有等待的用户，当有足够的seats，这个进程就会通知（最长等待）的用户来进行选择，叫做WaitingUserService。
 
 a. ActiveRservationService  
-我们可以将每个Show的所有reservations存放在内存中，使用Linked HashMap或者TreeMap之类的数据结构。如果就可以根据时间顺序判断reservation的状态。
+我们可以将每个Show的所有reservations存放在内存中，使用Linked HashMap或者TreeMap之类的数据结构。如果就可以根据时间顺序判断reservation的状态。  
+为了记录每场show的预约，可以用HashTable，其中key是ShowID，value是LinkedHashMap包含了BookingID和Timestamp。
+
+在数据库中，我们将预约存储在Booking表，expiry time保存在Timestamp column。其中Status字段有值Reserved(1)，当booking完成后，Status会更新为Booked(2)并且将之从LinkedHashMap中移除。如果预约过期，我们从LinkedHashMap移除记录，同时也更新Status为Expired(3)。
+
+此外ActiveReservationsService也会连接外部的金融接口，处理用户的支付。当Booking完成后或者预约过期，WaitingUsersService会得到信号让等待信号得到服务。
+
+b. WaitingUsersService  
+和ActiveReservationsService一样，也可以将一个场次的waiting users存放在memory，同样使用LinkedHashMap或者TreeMap。如果用户cancel了请求就可以直接从map中删除。并且，因为我们是first-come-first-serve的，所以LinkedHashMap是指向最长等待的用户的，当有位置时候，总是先服务等待最久的用户。
+
+大范围我们使用HashTable来存储所有的场次的等待用户，key是ShowID，value就是LinkedHashMap包含了UserIDs和wait-start-time。
+
+用户可以使用Long Polling技术来保持他们的预约更新。 
+
+Rservation Expiration  
+在服务端，ActiveRservationService保持对所有reservations的expiry的跟踪。但是因为客户端也会显示一个计时器，这个计时器有可能和服务器的有差异，所以需要增加大概5秒钟的buffer，防止例如用户在服务器超时后才过期，让购买失败。
+
+9. Concurrency  
+How to handle concurrency，such that no two users are able to book same seat.这是重点之一，我们可以通过SQL databases的transactions来防止冲突。比如，如果我们使用SQL server我们可以利用Transaction Isolation Levels(??)来锁定rows，下面是sample：  
+```
+SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+ 
+BEGIN TRANSACTION;
+ 
+    -- Suppose we intend to reserve three seats (IDs: 54, 55, 56) for ShowID=99 
+    Select * From Show_Seat where ShowID=99 && ShowSeatID in (54, 55, 56) && Status=0 -- free 
+ 
+    -- if the number of rows returned by the above statement is three, we can update to 
+    -- return success otherwise return failure to the user.
+    update Show_Seat ...
+    update Booking ...
+ 
+COMMIT TRANSACTION;
+```  
+'Serializable'就是最高的isolation level，防止了Dirty，Nonrepeatable和Phantoms的读取。需要注意的是，在transaction中，如果我们读取了rows，这些rows也会被锁定无法update。
+
+10. Fault Tolerance  
+What happens when ActiveRservationService or WaitingUsersService crashes？  
+当ActiveReservationsService宕机，我们仍然可以从Booking表中读取预约数据。因为我们在表中保存了Status column。另外一个方案是master-slave设置，当master的AcitiveReservationsService服务挂了，slave可以接上。  
+注意我们这里没有存放waiting users到数据库，所以，当WaitingUsersService挂了，我们无法恢复除非使用了master-slave设置。  
+同理，我们也可以在数据库上使用master-slave设置，让数据库fault tolerant。
+
+11. Data Partitioning  
+主要是讨论在大量场次数据量情况下无法分区。  
+
+Database partitioning: 如果我们用MovieID分区，那么我们该movie的场次都会存放在一个服务器中。这样对于个别热门电影，可能造成大量load。一个更好的方案是通过ShowID分区，这样能保证负载平均分布到不同服务器中。  
+
+ActivieReservationService and WaitingUserService partitioning: 所有的用户sessions和行为都由我们的服务器管理，所以需要一些机制来分配。我们可以使用Consistent Hashing来处理ActiveReservationSercieh和WaitingUserService，通过ShowID来进行Hash。这样，一个场次的所有预约和等待用户将通过特定的服务器来处理。假设复杂均衡让Consistent Hashing为每场Show了分配了3个服务器，每当预约过期，服务器将做如下操作： 
+1)更新数据库删除booking数据，在show_seats表中删除seats数据  
+2)在内存的LinkedHashMap中删除reservation  
+3)通知用户他们的预约已经过期  
+4)广播所有的WaitingUserService服务器，找到等待最久的那个用户。Consistent Hashing机制可以告知那个服务器有这些目标用户。（这个具体是？？）  
+5)发送信息到WaitingUserService服务器激活等待最久的用户，如果有足够的seats
+
+当reservation成功，做以下操作：  
+1)服务器hold预约，并且发送给所有包含该show记录的服务器。这样这些服务器就可以让所有waiting users过期，如果waiting user需要的seats多余avaiable的seats。  
+2)在收到上述信息后，所有hold等待用户的服务器会query数据库找出还剩下多少有效座位。一个数据库cache可以保证这个query只跑一次（这个留意下）  
+3)如果waiting用户需要的seats多余avaialbe的seats，将被expire，因此WaitingUserService必须iterate LinkedHashMap看需要删除的waiting users(这个可能会较慢)。
+
+
+自己总结下： 
+这个设计题要了解清楚需求，包括搜索，预定，座位，支付等功能。本题的业务流程比较复杂，性能上要求不是非常高，通过标准的分布式比如Consistent Hashing就可以处理，但是对安全性和可靠性要求很高。所以对并发的处理和事务的处理是重点，不过这些都可以由一个关系型数据库来搞定。对数据库的设计和表间关系比较复杂，每个对象尽量独立。业务逻辑复杂，对细节的挖掘处理要把握好，比如等待时候没座位了，等待过期等等。这里的AcitiveReservationsService和WatingUserService是独立出来的重点服务，因为负载较大，所以也需要引入Load Balance和Consistent Hashing。用户信息用Map<ShowID, LinkedHashMap<BookingID, TimeStamp>>来保存的细节很重要。此外最后还要深挖细节，比如用Long polling解决用户状态更新，还有用户服务器时间不一致的处理都是加分项，不过大方向对了细节都是有一定基础了。
