@@ -1,3 +1,3 @@
 # System-Architecture
 
-Things about system architecture, tadeoff
+Things about system architecture, tradeoff
