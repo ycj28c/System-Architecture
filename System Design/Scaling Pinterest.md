@@ -4,7 +4,7 @@ https://www.infoq.com/presentations/pinterest/
 ## pinterest的演化
 在从小traffic到大traffic的过程中，尝试了很多不同的技术，但是太复杂的结构反而容易错误。
 
-后来改成简单的结构：
+后来改成简单的结构：  
 1.Amazon EC2/S3 reliablility，reporting，很好的DB，load balancing，一个Engineer就能搞定大部分工作。缺点是比较少，每个box都是一样的，想自定义某个数据库多点内存都不行。不过因为都一样，也不容易出问题。
 
 2.Why MySQL？很成熟，不丢数据，大家都会用。响应时间是线程增长的，可以预期今后几周的表现。社区支持好，免费。
@@ -44,7 +44,7 @@ pinterest的观点是scary。
 如果有很多数据，比如几个TB，那么应该早点shard，越晚就会让transition更难。我们删除了大多数join，在之间使用cache。  
 每次挑选最大的table，分区（shard），如果shard还不够，那就继续shard。
 
-### pinterest的数据布局变化：
+### Pinterest的数据布局变化：
 这是基于读远大于写的情况  
 1DB + Foreign Keys + Joins  -->  
 1DB + Denormalized + Cache 就是解耦表的联系 -->   
@@ -53,7 +53,7 @@ Several functionally shared DBs（开始shard大表） + Read slaves + Cache -->
 ID sharded DBs（通过id的范围来shard了） + Backup slaves（slave是用来提供备份的） + Cache（cache存在于各个表的读取之间，提高性能）
 
 ### Watch out for...  
-1）cannot perform most joins要解耦了，不能太多join  
+1）Cannot perform most joins要解耦了，不能太多join  
 2）No transaction capabilities 因为是解耦的，所以写入某个数据库可能是会失败的，所以transaction是丢失了  
 3）Extra effort to maintain unique constraints 某些id需要全局unique比如额外管理比如userid啊，pinId啊之类，比如新user，先用id generate生成一个，确保是唯一的。在走shard的流程。    
 4）Schema changes requires more planning 这个很明显  
@@ -100,7 +100,7 @@ Naming schema is noum_verb_noun（比如user_has_boards，pin_has_likes），所
 4）Data DOES NOT MOVE  
 准确的说是不移动shard，但是物理数据库或者服务器是可以移动的。
 
-5）all tables exist on all shards  
+5）All tables exist on all shards  
 
 6）No schema changes required（index = new table）   
 因为使用的是和NoSQL类似的MySQL bolb存放，所以加一个属性也是一样方便，应用程序的code可以自动识别和添加（这里还需要一个version check的功能）。
@@ -108,7 +108,7 @@ Naming schema is noum_verb_noun（比如user_has_boards，pin_has_likes），所
 有些情况需要更新数据库，是需要downtime的，那么现在replicate中把数据做好，然后替换上去。
   
 ### Loading a page：  
-一个人的pinterest可能包含人物信息，pins，like等等信息，我们可能需要以下多个query来找出数据：
+一个人的pinterest的页面可能包含人物信息，pins，like等等信息，我们可能需要以下多个query来找出数据：
 ```
 select body from user where id = <local user_id>
 select board_id from user_has_boards where user_id =<user_id>
@@ -119,7 +119,7 @@ select body from pins where id in (pin_ids)
 query很多，要用很多query才能得到需要的一个页面数据，但是因为几乎所有的call都是有cache的，所以速度不慢。
 
 ### Scripting：  
-当有新功能的时候，需要同步更新old shard和new shard，当数据量大的时候，实际可能花费很久，但自信数据是正确的时候，就替换掉old shard。但是过程要很小心，可能会有数据丢失，总是会出现一系列的问题运行大量数据的时候。这里pinterest推荐了一个Pyres来进行queue？替换了rabbitQueue。
+当有新功能的时候，需要同步更新old shard和new shard，当数据量大的时候，实际可能花费很久，但自信数据是正确的时候，就替换掉old shard。但是过程要很小心，可能会有数据丢失，总是会出现一系列的问题运行大量数据的时候。这里pinterest推荐了一个Pyres来进行queue替换了rabbitQueue，据说用的不错。
 
 ### In The Works：  
 1）因为太多connection，需要需要分配更多的memory用来支持connection，避免swap。  
