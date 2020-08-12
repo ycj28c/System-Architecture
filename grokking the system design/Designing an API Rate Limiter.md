@@ -32,7 +32,7 @@ Non-Functional Requirements：
 ### 5.What are different types of throttling?
 几种throttling的类型：  
 1)Hard Throttling：固定数量的API请求限制。  
-2)Soft Throttling：百分比的机制，比如限制没分钟100条信息，10%的超额限制，也就是最多110条信息每秒。  
+2)Soft Throttling：百分比的机制，比如限制每分钟100条信息，10%的超额限制，也就是最多110条信息每秒。  
 3)Elastic or Dynamic Throttling：弹性限制，只要系统有额外资源，就允许用户超过100条信息限制。
 
 ### 6.What are different types of algorithms used for Rate Limiting？
