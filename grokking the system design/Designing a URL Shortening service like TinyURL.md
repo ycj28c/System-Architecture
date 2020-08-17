@@ -149,9 +149,40 @@ Should we impose size limits on custom aliasas？
 a.Range Based Partitioning：  
 我们通过URL hash的first letter来分区。问题是这个可能导致DB负载不平衡。比如E相对其他的字符有太多的数据。
 
-b
+b.Hash-Based Partitioning：  
+用某个hash function将url随机的分布到不同的partition去，比如，总是分布到[1,256]的区间。这个方案仍然可能会导致分区过载问题，需要通过consistent hashing解决。
 
+### 8.Cache
+显然可以在数据库层外加上cache层，比如使用Memcached。
 
+How much cache memory should we have?  
+基于80-20原理，一开始可以cache 20%的数据，前面计算过，我们需要170G来cache每日数据。一台机器基本也可以搞定，或者用多台小机器集群来做。
+
+Which cache eviction policy would best fit our needs?  
+通常就使用LRU算法作为替换算法，自己应用就是LinkedHashMap，leetcode都有题，不多说。如果为了增加efficiency，还可以增加replicate来分布load。
+
+How can each cache replica be updated?  
+当在cache中读不到的时候就会读取数据库，这个时候就更新到每个replica去，如果该replica已经有了就跳过，如果没有就加入新entry
+
+### 9.Load Balancer (LB)
+下面几个地方可以添加LB：  
+1.client和application服务器之间  
+2.application服务器和数据库之间  
+3.application服务器和cache之间  
+最简单的LB机制就是round robin，轮流分配，因为通过心跳检测，所以如果某个机器宕机了，round robin会自动移除。不过问题是不监控实际负载，如果某台服务器的超载了，只要不宕机，LB仍然会尝试发traffic过去，解决这个问题就是周期性的发送query来监控各个服务器的load，并按照结果分配traffic。
+
+### 10.Purging or DB cleanup
+怎么处理过期的url，一种是周期性的查询并删除，显然会产生不小的花销。另外一种就是Lazy cleanup了，只有读取到的url已过期的时候删除。
+
+### 11.Telemetry
+哪些信息值得记录？比如一个url用了多少次，访问者的国家，访问时间等等
+
+### 12. Security and Permissions
+用户是否可以生成private url，或者某个url只允许特定的用户访问？  
+我们可以记录每个url的访问权限（public或者private），当然也可以创建一个单独的table用来记录可以访问该url的用户列表，如果用户无权限访问就返回401错误。在存储上因为使用的是NoSQL比如Cassandra，所以key是Hash（或者KGS生成的Key），而column值就是所有有权限访问的userID。
+
+## 总结
+核心问题就是key的产生，一种是动态的MD5+Base64实时产生，不过有重复问题（可以用加上时间戳解决，不过还是有容量问题），另外一种就是独立的KGS系统预先生成。另外一个核心就是concurrency的解决，多个服务器共同访问如果处理，处理方式就是一旦请求了url，KGS就放入到已用table。至于scale部分，都是老套路，nosql可以直接partition，增加LB啊，增加cache等等。
 
 ## Reference
 [md5加密以后的字符串长度](https://zhidao.baidu.com/question/70714040)
