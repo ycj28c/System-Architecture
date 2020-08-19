@@ -139,5 +139,45 @@ a.Sharding based on regions:
 解决方法是要么重新分区repartition或者使用consistent hashing
 
 b.Sharding based on LocationID：  
+我们的hash函数用LocationID进行map，当创建QuadTree的时候，迭代每个地点并计算每个LocaltionID的hash值来决定存放点。当搜索的时候，遍历所有服务器，每个服务器返回附近的地点，由中央汇总。  
+//TODO 这里不是很清晰
+
+Will we have different QuadTree structure on different partitions？  
+是的，不能保证每个分区的grid一样多，不过可以近似数量。不同服务器上不同的树结构并不会产生问题，因为我们在所有分区上会搜索半径内的neighboring grid。  
+后续的部分也会假设是按照LocationID分区的。
+
+### 8.Replication and Fault Tolerance
+可以为QuadTree服务器增加replicas来分布traffic，可以采用master-slave设置，replicas服务器只用作读取。所有写操作都先进入master节点，然后再到slave，所以slave节点会有些许的延迟。  
+如果QuadTree服务器宕了怎么办？因为我们还有secondary replica，可以临时顶替上去作为failover。primary和secondary服务器应该有相同的QuadTree结构。
+
+What if both primary and secondary servers die at the same time？  
+如果都宕机了，就需要上一台新机器，重新建QuadTree了。不过怎么做呢，我们并不知道这个服务器上有哪些数据？只能穷举数据库找到并用hash函数过滤LocationIDs来找到我们需要的ID了，会很慢，而且建立过程中服务不可用。  
+
+How can we efficiently retrieve a mapping between Places and QuadTree server？  
+可以再加一套系统（QuadTree index server）用来存放LocationID和server的信息。可以是一个HashMap，key是QuadTree服务器编号，value是HashSet包含了所有该服务器的地点（包括了LocationID和Lat/Long信息）。因为我们存放在HashSet里面，所以我们可以很快的添加和删除place。  
+这样当QuadTree服务器宕机了，能从reverse Index系统快速恢复，同样我们可以给这个QuadTree Index server增加replica座位fault tolerance。如果不行QuadTree Index server也都宕机了，就从数据库来创建了。
+
+（这里可以有个图，QuadTree index处于Database和QuadTree Server之间）
+
+### 9.Cache
+Cache主要用来处理热门地点，应该处于QuadTree服务器和Aggregation服务器之间。可以使用Memcache或者redis，算法通常就是LRU
+
+### 10.Load Balancing(LB)
+需要在两个位置增加LB层：  
+1）在client和Application Server之间  
+2）在Application和Backend Server之间  
+
+LB的配置可以使用Round Robin，好处是轮询，所以所有的request会平均分布，如果某台机器宕机就会略过。缺点就是难以处理high load服务器，仍然会尝试丢traffic过去。所以应该使用更聪明的配置，周期性的检查每个服务器的load来调整balance。
+
+### 11.Ranking
+我们怎么对搜索结果进行Rank，比如根据popularity排序和relevance排序？
+
+How can we return most popular places within a given radius？  
+假设我们保持跟踪每个地点的popularity。比如这个地点有几星（就是用户给的星数的平均）？这个popularity可以存放在数据库，也可以存放到quadTree里。比如我们要搜索Top100的地点在当前半径内，就可以让每个分区的QuadTree返回top100，然后进行汇总就行。
+
+但是如何更新QuadTree的popularity信息？请注意这个系统的更新不是很频繁，所以可以不需要实时更新，可以在系统压力小或者每个1小时更新一下。
+
+##总结
+这个范围内找地点的应用场景很多，有很多可以深挖的地方。其中最重要的点就是地理坐标的快速检索，这里的方案是使用QuadTree，将世界分成N个grid，把所有的Location都塞入到QuadTree中，从而可以实时返回用户搜索结果。在分区的处理上用Hash函数结果LocationId来平均分配（这个Hash函数没有深入）。在fault tolerance的处理也比较特殊，因为要考虑到快速恢复QuadTree，所以还需要一个reverse index的系统。
 
 
