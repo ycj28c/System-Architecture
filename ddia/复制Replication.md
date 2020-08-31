@@ -1,5 +1,7 @@
 //TODO
 
+## 基础知识
+
 NoSQL使用cluster作为集群，不过它们的集群方式并不同。
 
 比如是cassandra是Master，而mongo database是文本数据库
@@ -23,8 +25,8 @@ R = 一次数据对象读取要访问的副本的数量
 
 更新时，只有至少W副本更新成功时才算更新操作成功；读取时，至少要读取R个副本的数据。这样当W + R > N时，对于同一个数据对象，更新集合与读取集合一定有重叠，保证了读取的数据中一定有最近更新的值。
 
-[聊聊replication的方式](https://www.jianshu.com/p/0abdb2fbe48c)
-DDIA的最为系统
-[分布式系统之 Replication](https://zhuanlan.zhihu.com/p/32207099)
-翻译版
-[分布式数据复制的三种方式](https://blog.csdn.net/lilongsy/article/details/98193924)
+Quorum机制：W + R > N 保证一致性，在任意replica上写，用vector lock记录version，读数据时进行reconsiliation；N越大越不怕data center failure，W越小越可写，R越小越可读，只要W+R>N则为强一致。
+
+## Reference
+[聊聊replication的方式](https://www.jianshu.com/p/0abdb2fbe48c)  
+[DDIA 5. 复制](https://github.com/Vonng/ddia/blob/master/ch5.md)  
