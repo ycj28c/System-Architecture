@@ -43,7 +43,7 @@ Basic Paxos：
 角色太多，有client，proposer，acceptor，learner等，不容易开发，流程也太复杂
 
 Multi Paxos：  
-减少了角色，不过还是较难理解
+减少了角色，不过还是较难理解，传统的数据库比如MySQL也可以通过paxos协议实现强一致集群。
 
 Raft：  
 简单版的Multi Paxos，划分3个子问题：
