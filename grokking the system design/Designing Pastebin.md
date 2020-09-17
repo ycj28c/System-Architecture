@@ -121,9 +121,11 @@ How does it handle a paste read request？
 b.数据库层  
 可以分为两个数据库：  
 1.Metadata数据库：  
-可以使用关系型数据库比如MySQL或者分布式key-value数据库比如Dynamo或者Cassandra。  
+可以使用关系型数据库比如MySQL或者分布式key-value数据库比如Dynamo(key-value的代表数据库)或者Cassandra(列式数据库代表)。  
+使用关系型数据库可以保证事务的一致性，用户完成请求总能得到正确的返回。缺点是强一致性，速度慢。而pastebin的服务主要是public生成，所以无法对用户进行很好的shard，造成扩展也是很困难。  
+使用非关系型数据库可以无脑扩展，保证性能和吞吐量，有大量用户也能很快响应。缺点是在集群情况下是基本使用最终一致性，主用户可以直接write后获得最新数据，但是其他地域的用户马上使用这个url可能不能马上获取到。另外这个情况因为还需要存储text，肯定需要一部分的返回时间，所以noSQL应该不明显吧。
 2.Object存储：  
-可以将内存存放到Amazon S3。可以方便扩容。
+可以将内容存放到Amazon S3。可以方便扩容。
 
 画图：
 Clients -- LB -- App Server -- LB -- Object storage
@@ -143,7 +145,7 @@ Key-DB(stand-by)-- Key-DB --- Cleanup Service
 Purging or DB cleanup见TinyURL章节，大致就是在expire后删除并回收key，放回到Key-DB去。默认两年expiration时间。
 
 数据分区和备份：  
-data partitioning和Replication见TinyURL章节，大致是说可以用URL的first letter进行分区，但是可能导致不平衡。也可以使用URL的Hash结果分区，服务器超载仍然可能发生，可以使用consistent hashing来增加系统的可用性。		
+data partitioning和Replication见TinyURL章节，大致是说可以用URL的first letter进行分区，但是可能导致不平衡。也可以使用URL的Hash结果分区，服务器超载仍然可能发生，可以使用consistent hashing来增加系统的可用性。使用hash来分区的场景都可以用上consistent hashing来平衡。		
 
 缓存和负载均衡：  
 Cache and Load Balancer见TinyURL章节，大致就是使用memcached，用LRU，20%的cache之类。量级大的Application server和数据库前加load balance。	
@@ -154,7 +156,6 @@ Security and Permissions见TinyURL章节，大致就是可以给vip用户提供�
 
 ### 总结
 基本上tinyURL一样，可以直接看tinyURL。  
-什么时候用dynamo和cassandra需要再研究下。	
-具体使用consistent Hashing的场景结合例子再研究下。
+什么时候用dynamo和cassandra需要再研究下。
 					
 
