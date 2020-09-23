@@ -27,6 +27,8 @@ Long-Polling就是当客户端向服务端发送请求，服务端无需马上�
 ## WebSockets
 WebSocket提供了Full duplex通信（全双工通信）频道在一个TCP连接里。它提供了持久化的客户端和服务端的连接，双方都可以随时发送信息，所以发送基本是实时的。
 
+WebSocket在HTTP的基础上进行改进，成为了协议。只能在支持的设备和端之间使用。我们知道HTTP是无状态的，每次通信要发一堆无用表头，而WebSocket一次握手之后就建立了WebSocket协议层，就相当于在服务器和客户端搭建了管道，这边管道一丢另外一边就能收到。不过实际上因为网络的不确定性，WebStocket也会发送一些ping来维持连接状态，避免超时被踢掉。
+
 说白了就是客户端服务端面对面聊天。例子有大型多人在线网游，聊天室等。
 
 ## Server-Sent Event (SSEs)
@@ -37,4 +39,5 @@ SSEs在客户端和服务端建立了持久化连接，服务端可以通过这�
 IE/Edge不支持
 
 ## Reference
-[各类“服务器推”技术原理与实例](https://juejin.im/post/5b135b78f265da6e420eab7d)
+[各类“服务器推”技术原理与实例](https://juejin.im/post/5b135b78f265da6e420eab7d)  
+[WebSocket 是什么原理？为什么可以实现持久连接？](https://www.zhihu.com/question/20215561)
