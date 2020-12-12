@@ -25,9 +25,11 @@ Java的演化RMI(RPC) -> EJB -> Spring。
 
 03
 ```
-1）Apache Flume：海量日志采集传输框架
+1）Apache Flume：高可靠海量日志采集传输框架
 log数据一般通过socket传输给另外一个系统，可能需要flume来帮助传输，保证抵达，高可靠。source-channel-sink模式。
 数据保存在内存，容易丢，不容易增加消费者，数据无法长时间保留。
+
+数据的冗余保存策略，在不同的node进行备份，一个宕了下一个还能用。
 
 重温hash的原理：
 hashcode -> hash -> ? & 15 -> index 所以hash容量初始16，扩容必须是2倍数
@@ -39,8 +41,47 @@ hashcode -> hash -> ? & 15 -> index 所以hash容量初始16，扩容必须是2�
 2. 实时消费 (Storm, Flink, Spark Streaming)
 3. 离线存储 （HDFS or Object Storage or NoSQL) +  离线分析（Presto，Hive，Hadoop）
 4. 有一些场景可能需要搜索，可以加上ES或ELK
-
 比如log->flume->kafka->hdfs(solr)
-线上数据 -> flume -> kafka -> hdfs -> MR离线计算
-线上数据 -> flume -> kafka -> storm
+```
+
+04
+```
+消息分发的方式：
+1.点对点模式，就是传统生产者消费者模式。
+2.发布/订阅模式，一对多，数据生产后，所有订阅者都可以取。
+最大的区别就是发布订阅模式要保存数据，不会因为一个客户取了就删除。
+
+kafka是发布订阅模式，
+扩展性：可以随意扩展，
+可恢复性：有多个队列宕一个也可以，然后之前的队列恢复了继续提供服务
+顺序保证：比较重要的特性，每个队列的顺序是一致的，不过不同分区同时获取不保证顺序（因为网速不一致）
+
+kafka对消息保存时根据Topic进行归类，发送消息者称为Producer，消息接受者称为Consumer，此外kafka集群有多个kafka实例组成，每个实例（server）称为broker。
+无论kafka集群，还是consumer都依赖于zookeeper集群保存一些meta信息。
+
+kafka的架构；
+1）Producer：消息生产者，就是向kafka broker发消息的客户端。
+2）Consumer：消息消费者，向kafka broker取消息的客户端
+3）Topic：可以理解为一个队列。
+4）Consumer Group（CG）：这个kafka用来实现一个topic消息的广播（发给所有的consumer）和单播（发给任意一个consumer）的手段。一个topic可以有多个CG。topic的消息会复制（不是真的复制，是概念上的）到所有的CG，但每个partition只会把消息发给该CG中的一个consumer。如果需要实现广播，只要每个consumer有一个独立的CG就可以了。要实现单播只要实现所有的consumer在同一个CG。用CG还可以将consumer进行自由的分组而不需要多次发送消息到不同的topic。为了增加消费能力，多个Consumer组成Consumer group，每个Consumer读取一些Partition，然后组合。CG里面的Consumer一般和partition的数量一样。
+5）Broker：一台kafka服务器就是一个broker。一个集群由多个broker组成，一个broker可以容纳多个topic。
+6）Partition:对了实现扩展性，一个非常大的topic可以分不到多个broker（即服务器）上，一个topic可以分为多个partition，每个partition是一个有序的队列。partition中的每条消息都会被分配一个有序的id（offset）。kafka只保证按一个partition中的顺序将消息发给Consumer，不保证一个topic的整理（多个partition间）的顺序。此外这些partition还会备份到其他broker去。
+所以某个业务的topic如果需要顺序，必须只能放到一个broker。
+7）offset：kafka的存储文件都是按照offset。kafka来命名，用offset做名字的好处是方便查找。
+8）Leader Follower: Consumer只会从Leader的partition读，follower的partition只用来作备份。
+9）zookeeper注册消息：保存所有集群机器信息，以及消费者当前消费信息。
+
+实例安装
+```
+
+05
+```
+操作和试验kafka
+```
+
+06
+```
+系统读写的原理
+kafka的高性能原理
+0拷贝技术
 ```
