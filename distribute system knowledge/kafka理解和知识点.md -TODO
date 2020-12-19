@@ -1,10 +1,13 @@
-
-
+关于Kafka的一个形象的解释：
+```
 https://www.zhihu.com/question/53331259/answer/242678597
 老板有个好消息要告诉大家，有两个办法:
 1.到每个座位上挨个儿告诉每个人。什么？张三去上厕所了？那张三就只能错过好消息了！ 2.老板把消息写到黑板报上，谁想知道就来看一下，什么？张三请假了？没关系，我一周之后才擦掉，总会看见的！什么张三请假两周？那就算了，我反正只保留一周，不然其他好消息没地方写了redis用第一种办法，kafka用第二种办法，知道什么区别了吧
+```
 
-https://www.youtube.com/watch?v=JUq1N8NClcg
+看了这个教程，讲的很好：  
+[【大数据】Kafka全套教程 从源码到面试真题by海波](https://www.youtube.com/watch?v=JUq1N8NClcg)  
+下面的各集的笔记：
 
 01
 ```
@@ -72,16 +75,131 @@ kafka的架构；
 9）zookeeper注册消息：保存所有集群机器信息，以及消费者当前消费信息。
 
 实例安装
+可以选择多少个分区，多少个备份
 ```
 
 05
 ```
 操作和试验kafka
+比如生成first0，first1的文件，会根据设置存放到不同的集群机器中去
+
+一个kafka的分区文件类似：
+00000000000000000000.index ->索引，快速定位内容位置
+00000000000000000000.log ->这个是实际文件
+00000000000000000000.timeing
+
+一些kafka配置的解释：
+broker.id=0 这个broker(server)的编号
+delete.topic.enable=true 是否删除物理topic
+log.dirs=/opt/module/kafka/logs 存储的位置
+nums.partitions=2 多少个分区
+zookeeper.connect=hadoop102:2181,hadoop103:2181 连接zookeeper集群，可以多个
+
+部分指令示例：
+#启动
+[hadoop102]$ bin/kafka-server-start.sh config/server.properties &
+[hadoop103]$ bin/kafka-server-start.sh config/server.properties &
+[hadoop104]$ bin/kafka-server-start.sh config/server.properties &
+#关闭
+[hadoop102]$ bin/kafka-server-stop.sh stop
+[hadoop103]$ bin/kafka-server-stop.sh stop
+[hadoop104]$ bin/kafka-server-stop.sh stop
+#查看topic
+[hadoop102]$ bin/kafka-topics.sh --zookeeper hadoop102:2181 --list
+#创建topic #partitions分区个数 #replication-factor副本数（包括leader）
+[hadoop102]$ bin/kafka-topics.sh --zookeeper hadoop102:2181 \
+--create --topic first --partitions 1 --replication-factor 3
+#删除topic
+[hadoop102]$ bin/kafka-topics.sh --zookeeper hadoop102:2181 \
+--delete --topic first
+#发送消息
+[hadoop102]$ bin/kafka-console-producer.sh \
+--broker-list hadoop102:9092 --topic first
+>hello world
+>hahahaha
+#消费消息 #from-begining从头读取，默认是从上次接着读
+[hadoop102]$ bin/kafka-console-consumer.sh \
+--zookeeper hadoop102:2181 --from-begining --topic first
+#查看摸个topic的详情
+[hadoop102]$ bin/kafka-topics.sh --zookeeper hadoop102:2181 \
+--describe --topic first
 ```
 
 06
 ```
 系统读写的原理
 kafka的高性能原理
-0拷贝技术
+1）高吞吐量
+2）顺写日志
+3）0拷贝技术：从系统的缓存（pageCache）直接拷贝
+4）分段日志：将大文件（比如大于1G）拆分称为多个文件，可以从偏移量后后面的分段开始读，快速定位从而加快读取
+5）预读（Read ahead）：就是缓存了相关数据，比如读取2，顺便把相临的1，3也读取了
+6）后写（Write Behind）：kafka直接写入操作系统Cache，由操作系统决定什么时间写入File。而Java程序是写入本身内存buffer，然后写入File。Kafka和Java程序是应用程序，而kafka让系统cache来写，是OS层，同一层级内的写是很快的。
+```
+
+07
+```
+int i=0;
+i =i++;
+System.out.println(i); --就是0
+因为有临时变量，其实有临时变量，过程是
+_a = i++;
+_a = 0; i = 1;
+i = _a = 0;
+idea编译器反编译的技巧可以看过程。
+
+Kafka是高读高写，Producer只和leader交互，然后replica（followers）的分区定时从leader拷贝数据。
+
+kafka生成数据三种应答机制（ACK）：
+1）取值为0：生产者发送完数据，不关心数据是否到达kafka，然后，直接发送下一条数据，这样的效率非常高，告示数据丢失的可能性非常大。
+2）取值为1：生产者发送数据，需要等待Leader的应答，如果应答完成，才能发送下一条数据，不关系follower是否接受成功，这种场合，性能会慢一些，但是数据比较安全。但是leader保存数据成功后，突然down掉，follower没来得及获取数据，那么数据就会丢失。
+3）取值为-1（all）：生产者发送数据，需要等待所有副本（leader+follower）的应答，这种方式数据最安全，但是性能非常差。
+Kafka默认使用的是1的模式
+```
+
+08
+```
+kafka生产数据的过程：
+produer有多个P，创建后放入Deque，然后通过sender发送到kafka集群，kafka集群通过zookeeper管理
+
+kafka数据保存：
+文件是顺序存储的，所以00000000000000000000.log存放的就是11111222223333之类的数据，然后在所以00000000000000000000.index里面过程类似KV的格式，比如1 0, 2 59来控制偏移量
+
+在follower（replica）还没来得及从leader取数据，leader就挂了怎么办？
+HW: High WaterMark 木桶理论中最矮的那段
+LEO: Log End offset 是leader的那段
+用户只能看到HW的，follower会从leader取，只更新LEO部分，如果这个时候leader挂掉了，follower换上，HW还是3，所以对于用户来说没有区别。只有全部follower更新后，leader的LEO就更新的，所以就可以更新HW了。
+```
+
+09
+```
+kafka消费数据：
+消费组CG在消费的时候需要连接zookeeper，因为断点续传的信息保存在zookeeper中。在新版本0.9版本后就不需要了，信息会保存在集群里。例子：
+#生产
+[kafka]$ bin/kafka-console-producer.sh --broker-list linux1:9092 --topic first
+#消费
+[consumer]$ bin/kafka-console-consumer.sh --bootstrap-server linux1:9092 --topic first 
+#这样就会创建一堆consumer_offset文件用来记录消费的偏移量，就不需要zookeeper了
+
+创建topic的说明：
+比如3台机器，如果创建4个partition没有问题，但是创建4个replica会报错，因为如果不是1台机器1个replica没有任何意义。
+
+一个消费者可以消费多个kafka分区，但是一个分区同一时间只能被一个消费者消费。如果消费者数量多于kafka分区，多余的消费者没有用。但是如果增加分区数据，kafka会自动平衡（由leader分配）
+
+存储策略：
+kafka会保留所有消息，可以根据1）基于时间删除,2）基于大小删除，注意kafka读取数据复杂度是O(1)，减少数据不提升性能。
+
+其中消费也有高级API和低级API，高级的都自动处理，低级需要自己管理偏移量和读取分区。消费者采用pull（拉）的方式来从分区读取，这样的好处是可以控制速率，来决定拉多少数据。
+
+演示消费者组：
+#生产
+[kafka]$ bin/kafka-console-producer.sh --broker-list linux1:9092 --topic first
+#单独的消费者组，每个命令启动一个消费者
+[consumer]$ bin/kafka-console-consumer.sh --zookeeper linux1:2181 --topic first --from-beginning
+#需要修改properties，控制消费者组
+group.id=test-consuemr-group
+#用消费者组的方式，两台consumer都运行下列指令
+[consumer]$ bin/kafka-console-consumer.sh --zookeeper linux1:2181 --topic first --from-beginning --consumer.config config/consumer.properties
+#用这种消费者组的方式，两台消费者收到的是分组后的信息
+
 ```
