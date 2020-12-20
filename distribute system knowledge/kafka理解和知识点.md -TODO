@@ -201,5 +201,238 @@ group.id=test-consuemr-group
 #用消费者组的方式，两台consumer都运行下列指令
 [consumer]$ bin/kafka-console-consumer.sh --zookeeper linux1:2181 --topic first --from-beginning --consumer.config config/consumer.properties
 #用这种消费者组的方式，两台消费者收到的是分组后的信息
-
 ```
+
+10 Kafka JavaAPI生产数据
+```
+Java用maven增加kafka依赖就能连接
+
+public class TestProducer {
+	public static void main(String[] args){
+		//创建配置对象
+		Properties prop = new Properties();
+		//kafka集群
+		prop.setProperty("bootstrap.servers", "linux:9092");
+		//K,V序列化对象
+		prop.setProperty("key.serializaer", "org.apache.kafka.common.serialization.StringSerializer");
+		prop.setProperty("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+		prop.setProperty("acks", "1");
+		//创建生产者
+		Producer<String, String> producer = new KafkaProcuer<String, String>(props);
+		//准备数据
+		String topic = "first";
+		String value = "Hello Kafka";
+		ProducerRecord record = new ProducerRecord(topic, value);
+		//生产（发送）数据
+		producer.send(record);
+		//关闭生产者
+		producer.close();
+	}
+}
+```
+
+11 Kafka Java生产者源码
+```
+kafka的是异步，这里提到了Java的future特性以及一个多线程写法
+
+public static void main(String[] args) throws Exception {
+	FutureTask<Integer> ft1 = new FutureTask<Integer>(new MyCallable10());
+	FutureTask<Integer> ft2 = new FutureTask<Integer>(new MyCallable100());
+	FutureTask<Integer> ft3 = new FutureTask<Integer>(new MyCallable1000());
+	
+	Thread t1 = new Thread(ft1);
+	Thread t2 = new Thread(ft2);
+	Thread t3 = new Thread(ft3);
+	
+	t1.start();
+	t2.start();
+	t3.start();
+	
+	System.out.println("main sm = " + (ft1.get() + ft2.get() + ft3.get());
+}
+
+get会阻塞当前的主线程，必须等待get结束
+
+public class TestProducer {
+	public static void main(String[] args) throws Exception{
+		Properties prop = new Properties();
+		prop.setProperty("bootstrap.servers", "linux:9092");
+		prop.setProperty("key.serializaer", "org.apache.kafka.common.serialization.StringSerializer");
+		prop.setProperty("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+		prop.setProperty("acks", "1");	//应答机制
+		//增加分区类，自己定义的分区类
+		Prop.setProperty("partitioner.class", "com.xxx.bigdata.kafka.producer.MyPartitioner");
+		Producer<String, String> producer = new KafkaProcuer<String, String>(props);
+		String topic = "first";
+		String value = "Hello Kafka";
+		ProducerRecord record = new ProducerRecord(topic, value);
+		//指定分区号
+		//ProducerRecord record = new ProducerRecord(topic, 1, null, value);
+		
+		//同步发送数据(需要获取结果)
+		producer.send(record).get();
+		//异步发送
+		producer.send(record);
+		//异步，增加回调函数，可以看到存放在哪里了
+		producer.send(record, new Callback()){
+			//回调方法
+			public void onCompletion(RecordMeadata metadata, Exception exception){
+				//发送哪一个分区
+				System.out.println(metadata.partition());
+				//发送数据偏移量
+				System.out.println(metadata.offset());
+			}
+		}
+		//关闭生产者
+		producer.close();
+	}
+}
+
+/*分区算法类
+ *就是写业务逻辑了，比如2020-10都存放分区1，2020-11都存放分区2，这样保证业务有序
+ */
+public class MayPartitioner implements Partitioner {
+	public int partition(String topic, Object key, byte[] keyBytes, Object value, byte[] valueBytes, Cluster cluster){
+		//2018-10
+		//crc32
+		//hash & %
+		String val = (String)value;
+		int result = values.hashCode() ^ Integer.MAX_VALUE;
+		return result % 4; 
+	}
+	public void close(){
+	}
+	public void configure(Map<String, ?> configs){
+	}
+}
+
+看了些源码，帮助不大
+``` 
+
+12 Kafka方法重载&重写
+```
+介绍了些源码，帮助不大
+
+讲个了个题
+public static void main(String[] args) throws Exception {
+	AA aa = new BB();
+	System.out.println(aa.getResult()); //是20
+}
+class AA {
+	public int i = 10;
+	//注意这里的i只看在哪申明的，所以如果调用的AA这个class的，用的就是AA的变量10
+	public int getResult(){
+		return i + 10;
+	}
+}
+class BB extends AA {
+	public int i = 20;
+	//public int getResult(){
+	//	return i + 20;
+	//}
+}
+另外一种情况
+public static void main(String[] args) throws Exception {
+	AA aa = new BB();
+	System.out.println(aa.getResult()); //是30
+}
+class AA {
+	public int i = 10;
+	//这种情况重载调用的是BB的getI()，返回20，再+10，就返回了30
+	public int getResult(){
+		return getI() + 10;
+	}
+	public int getI(){
+		return i;
+	}	
+}
+class BB extends AA {
+	public int i = 20;
+	pubic int getI(){
+		return i; //这个默认是this.i，所以返回就是20
+	}
+}
+```
+
+13 Kafka JavaAPI消费者
+```
+publi class TestConsumer {
+	public static void main(String[] args){
+		Properties prop = new Properties();
+		prop.setProperty("bootstrap.servers", "linux:9092");
+		prop.setProperty("key.deserializaer", "org.apache.kafka.common.Deserialization.StringSerializer");
+		prop.setProperty("value.deserializer", "org.apache.kafka.common.Deserialization.StringSerializer");
+		//指定consumer group
+		prop.setProperty("group.id", "test");
+		prop.setProperty("enable.auto.commit", "true");
+		prop.setProperty("auto.commit.interval.ms", "1000");
+	
+		//创建消费者对象
+		KafkaConsumer<String, String> consumer = new KafkaConsumer<String, String>(prop);
+		
+		//订阅主题
+		consumer.subscribe(Arrays.asList("first"));
+		
+		while ( true ) {
+			//拉取数据
+			ConsumerRecords<String, String> recors = consumer.poll(500); //500ms
+			
+			for(ConsumerRecord<String, String> record: records){
+				//打印数据
+				System.out.println(record);
+			}
+		}
+	}
+}
+还有更底层的低级API来进行consume
+public class LoweApiConsumer {
+	public static void main(String[] args){
+		BrokerEndPoint leader = null;
+		//创建简单消费者
+		String host = "linux1";
+		int port = 9092;
+		//获取分区的leader
+		SimpleConsumer metaConsumer = new SimpleConsumer(host, port, 500, 10 * 1024, "metadata");
+		//获取元数据消息
+		TopicMetadataRequest request = new TopicMetadataRequest(Arrays.asList("first");
+		TopicMetadataResponse response = metaConsumer.send(request);
+		response.topicsMetadata();
+		
+		leaderLabel:
+		for(TopicMetadata topicMetadata : response.topicsMetadata()){
+			if("first".equals(topicMetadata.topic())){
+				//关心的主题元数据信息
+				for(PartitionMetadata partitionMetadata : topicMetadata.partitionMetadata(){
+					int partid = partitionMetadata.partitionId();
+					if(partid == 1){
+						//关心的分区原数据信息
+						leader = partitionMetadata.leader();
+						break leaderLabel;
+					}
+				}
+			}
+		}
+		//host,port应该是指定分区的leader
+		SimpleConsumer consumer = new SimpleConsumer(host, port, 500, 10*1024, "accessLeader");
+		//抓取数据
+		FetchRequest req = new FetchRequestBuilder().addFetch("first",1,5,10*1024).build();
+		FetchResponse resp = consumer.fetch();
+		
+		ByteBufferMessagesSet  messageSet = resp.messageSet("first", 1);
+		for(MessageAndOffset messageAndOffset : messageSet){
+			ByteBuffer buffer = messageAndOffset.message().payload();
+			byte[] bs = new byte[buffer.limit()];
+			buffer.get(bs);
+			String value = new String(bs, "UTF-8");
+			System.out.println(value);
+		}
+	}
+}
+```
+
+
+
+
+
+
+
