@@ -9,13 +9,13 @@ https://www.zhihu.com/question/53331259/answer/242678597
 [【大数据】Kafka全套教程 从源码到面试真题by海波](https://www.youtube.com/watch?v=JUq1N8NClcg)  
 下面的各集的笔记：
 
-01
+01 Kafka分布式原理 集群
 ```
 Java的分为栈（线程和run的控制），堆（内存存放）和方法区（类的模板信息）。
 Java的演化RMI(RPC) -> EJB -> Spring。
 ```
 
-02
+02 Kafka分布式原理 系统
 ```
 集群的演化，
 1）负载均衡控制 
@@ -26,7 +26,7 @@ Java的演化RMI(RPC) -> EJB -> Spring。
 多个服务器会影响机器性能，网络性能，要解耦分离为多个微服务。但是为了解决微服务之间的通信和单点性能问题，要加上一个消息总线来管理和分配信息。（kafka来了）
 ```
 
-03
+03 Kafka原理介绍
 ```
 1）Apache Flume：高可靠海量日志采集传输框架
 log数据一般通过socket传输给另外一个系统，可能需要flume来帮助传输，保证抵达，高可靠。source-channel-sink模式。
@@ -47,7 +47,7 @@ hashcode -> hash -> ? & 15 -> index 所以hash容量初始16，扩容必须是2�
 比如log->flume->kafka->hdfs(solr)
 ```
 
-04
+04 Kafka介绍&安装
 ```
 消息分发的方式：
 1.点对点模式，就是传统生产者消费者模式。
@@ -78,7 +78,7 @@ kafka的架构；
 可以选择多少个分区，多少个备份
 ```
 
-05
+05 Kafka命令行操作
 ```
 操作和试验kafka
 比如生成first0，first1的文件，会根据设置存放到不同的集群机器中去
@@ -125,7 +125,7 @@ zookeeper.connect=hadoop102:2181,hadoop103:2181 连接zookeeper集群，可以�
 --describe --topic first
 ```
 
-06
+06 Kafka写入流程1
 ```
 系统读写的原理
 kafka的高性能原理
@@ -137,7 +137,7 @@ kafka的高性能原理
 6）后写（Write Behind）：kafka直接写入操作系统Cache，由操作系统决定什么时间写入File。而Java程序是写入本身内存buffer，然后写入File。Kafka和Java程序是应用程序，而kafka让系统cache来写，是OS层，同一层级内的写是很快的。
 ```
 
-07
+07 Kafka写入流程2
 ```
 int i=0;
 i =i++;
@@ -157,7 +157,7 @@ kafka生成数据三种应答机制（ACK）：
 Kafka默认使用的是1的模式
 ```
 
-08
+08 Kafka工作流程 数据写入&数据存储
 ```
 kafka生产数据的过程：
 produer有多个P，创建后放入Deque，然后通过sender发送到kafka集群，kafka集群通过zookeeper管理
@@ -171,7 +171,7 @@ LEO: Log End offset 是leader的那段
 用户只能看到HW的，follower会从leader取，只更新LEO部分，如果这个时候leader挂掉了，follower换上，HW还是3，所以对于用户来说没有区别。只有全部follower更新后，leader的LEO就更新的，所以就可以更新HW了。
 ```
 
-09
+09 Kafka工作流程 数据消费&消费者组
 ```
 kafka消费数据：
 消费组CG在消费的时候需要连接zookeeper，因为断点续传的信息保存在zookeeper中。在新版本0.9版本后就不需要了，信息会保存在集群里。例子：
@@ -398,6 +398,7 @@ public class LoweApiConsumer {
 		TopicMetadataResponse response = metaConsumer.send(request);
 		response.topicsMetadata();
 		
+		//这里的break用label的方式可以跳出多级循环
 		leaderLabel:
 		for(TopicMetadata topicMetadata : response.topicsMetadata()){
 			if("first".equals(topicMetadata.topic())){
@@ -430,9 +431,199 @@ public class LoweApiConsumer {
 }
 ```
 
+14 Kafka Java工作流程回顾 & 拦截器
+```
+提高消费能力：
+1.加大kafka分区，这样消费者组也能增加，可以同时消费。
+2.可以加大consumer.poll(100);的数量，就是一次poll更多数据，不过数据传输和网速也有关。
+3.自己控制offset，通常offset由kafka自己控制，为了性能如果consumer端控制也可以提高kafka集群性能
 
+拦截器(interceptor)
+kafka0.10版本后引入，用于client端的定制化控制逻辑。对于producer而言，interceptor使得用户在消费发送前以及producer回调逻辑前有机会对消息做一些定制化需求，比如修改消息等。和web的filter有点像。
 
+需求：实现一个简单的双interceptor组成的拦截链。第一个interceptor会在消息发送前将时间戳信息加到信息value的最前部；第二个interceptor会在消息发送后更新成功发送消息数或失败发送消息数。
+//拦截器1
+public class TimeInterceptor implements ProducerInterceptor<String, String> {
+	public ProducerRecord<String, String> onSend(ProducerRecord<String, String> record){
+		String oldValue = record.value();
+		String newValue = System.currentTimemillis() + "_" + oldValue;\
+		return new ProducerRecord<String, String>(record.topic(), newValue);
+	}
+	public void onAcknowledgement(RecordMetadata metadata, Exception exception){
+	}
+	public void close(){
+	}
+	public void configure(Map<String, ?> configs){
+	}
+}
+//拦截器2
+public class CounterInterceptor implements ProducerInterceptor<String, String> {
+	private int errCounter = 0;
+	private int successCounter = 0;
+	public ProducerRecord<String, String> onSend(ProducerRecord<String, String> record){
+		//此处返回原始数据，不能为空
+		return record;
+	}
+	public void onAcknowledgement(RecordMetadata metadata, Exception exception){
+		//统计成功和失败的次数
+		if(exception == null){
+			successCounter++;
+		} else {
+			errorCounter++;
+		}
+	}
+	//销毁时候最终统计
+	public void close(){
+		System.out.println("success count = " + successCounter);
+		System.out.println("error count = " + errorCounter);
+	}
+	public void configure(Map<String, ?> configs){
+	}
+}
+//主程序
+public class TestProducer {
+	public static void main(String[] args) throws Exception{
+		Properties prop = new Properties();
+		prop.setProperty("bootstrap.servers", "linux:9092");
+		prop.setProperty("key.serializaer", "org.apache.kafka.common.serialization.StringSerializer");
+		prop.setProperty("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+		prop.setProperty("acks", "1");	//应答机制		
+		//增加分区类，自己定义的分区类
+		Prop.setProperty("partitioner.class", "com.xxx.bigdata.kafka.producer.MyPartitioner");
+		
+		//配置拦截器
+		List<String> interceptors = new ArrayList<String>();
+		interceptors.add("com.xxx.bigdata.kafka.producer.interceptor.TimeInterceptor");
+		interceptors.add("comt.xxx.bigdata.kafka.producer.interceptor.CounterInterceptor");
+		prop.put(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, interceptors);
+		
+		Producer<String, String> producer = new KafkaProcuer<String, String>(props);
+		String topic = "first";
+		String value = "Hello Kafka";
+		ProducerRecord record = new ProducerRecord(topic, value);
+		//指定分区号
+		//ProducerRecord record = new ProducerRecord(topic, 1, null, value);
+		
+		//同步发送数据(需要获取结果)
+		producer.send(record).get();
+		//异步发送
+		producer.send(record);
+		//异步，增加回调函数，可以看到存放在哪里了
+		for(int i= 1; i<=5; i++){
+			producer.send(record, new Callback()){
+				//回调方法
+				public void onCompletion(RecordMeadata metadata, Exception exception){
+					//发送哪一个分区
+					System.out.println(metadata.partition());
+					//发送数据偏移量
+					System.out.println(metadata.offset());
+					//会打印出5条成功的拦截器信息
+				}
+			}
+		}
+		//关闭生产者
+		producer.close();
+	}
+}
+```
 
+15 Kafka流程处理
+```
+Kafka stream的流框架，不过有了Apache spark和Apark storm，所以kafka stream的用的不多。
 
+需求：实时处理单词带有>>>前缀的内容，例如输出是"xxx>>>ximenqing",最终处理成"ximenqing"
+
+kafka的处理就是将错误的原始数据放在一个topic，处理完又放到一个topic，所以用的不多。
+
+Java String的底层知识：
+Java类上有final说明这个类不能有子类，final一个数组，比如char[]，表示内存地址开辟后无法改变，但是其中的内容还是能变的。
+比如String就是无法变的，但是通过Java的反射机制，是有办法绕过
+public static void main(String[] args) throws Exception {
+	String s = "abc";
+	//s = s.trim() 通常要用这种方式
+	Class clazz = s.getClass();
+	Field f = clazz.getDeclaredField("value");
+	f.setAccessible(true); //加了这个就能访问私有了，这在通常情况下是不允许的
+	char[] cs = (char[])f.get(s); //char[] 是string的私有final属性
+	cs[1] = '%';
+	System.out.println(s); //显示了 "a%c"
+}
+
+```
+
+16 Kafka和flume集成
+```
+线上数据 -> flume -> kafka -> flume（根据情景增删流程）-> HDFS
+
+其他跳过
+
+一些Broker配置参数的介绍：
+比如控制message保存的时间；副本数据，建议2；等等
+
+Producer也有单独配置：
+比如压缩；自动提交（关闭预防宕机后的重复消费，因为offset会在开始存放在zookeeper）；
+
+Consumer的设置：
+比如增加poll来增加消费性能。
+```
+
+17 Kafka面试题
+```
+1.为什么kafka可以实现高吞吐？单节点kafka的吞吐量也比其他消息队列大，为什么?
+集群所以高吞吐，单节点使用了一系列技术比如零拷贝（zero-copy），顺写日志，预读后写，分段日志，批处理，压缩来提高吞吐。
+
+2.kafka的偏移量offset存放在哪儿，为什么？
+早期存放在zookeeper，但是zookeeper主要用来做协调，如果集群大持续的存放offset，导致zookeeper压力过大不合适。所以0.9之后会推荐存放到kafka cluster里面去。当然也可以自定义逻辑，自己用另外系统操作offset存放。
+
+3.Kafka里面用什么方式消费数据，拉的方式还是推的方式？
+poll（是因为客户端速率问题），如果server发有可能客户端无法承受这么多数据，导致压力过大。
+
+4.如何保证数据不会丢失或者重复消费的情况？做过哪些预防措施，怎么解决以上问题？
+Producer同步发送数据；使用ACK=-1（all）牺牲性能保证传输成功；自己维护offset避免重复消费（低级API）
+
+5.Kafka元数据存放在哪？
+zookeeper（/controller, /cluster, /consumer, /broker）
+
+6.为什么使用kafka，可不可以用flume直接将数据放在hdfs上
+可以，但是flume只是传输框架，不能存储，所以会丢失数据。另外flume消费者处理比较麻烦。
+
+7.kafka用的哪个版本？
+2.11_0.11.0.2，2.11是scala版本，0.11是kafka版本
+
+8.kafka如何保证不同的订阅源都收到相同的一份内容？
+是通过HW，LEO，水桶理论，来保证客户端看到的数据是一样的
+
+9.Kafka中leader的选举机制？
+通过/controller来做的，通过zookeeper来管理的，哪个broker先再zookeeper上创建了/controller就是leader了，其他的broker会创建watch来监控/controller是否还在，不在就再次竞选。
+还有ISR的概念
+
+10.kafka的消费速度
+增加分区和消费者，增加拉取数据的大小，增大批处理的大小
+
+11.kafka分区
+包括Leader，Follower和Replication，
+分区导致的情况:用paritioner算法自定义，有序性用hash算法保证放在指定分区
+
+12.kafka原理，isr中什么情况下brokerid会消失
+ISR是正在同步的副本，
+在副本宕掉，网络阻塞时候就消失，或者lag导致数据缺失过多（就是落后太久没有追上leader的日志）
+
+13.为什么用kafka？kafka是如何存数据？
+速度快，冗余，异步等等。
+分段数据，offset，topics，partitions，index，log，replication等等概念
+
+14.flume和kafka有序吗？
+flume有序，kafka同一个分区有序，但是不保证不同分区的有序
+
+15.kafka控制台向topic生产数据的命令及控制台消费topic数据的命令
+等等
+
+16.kafka消费用的高级API，低级API
+KafkaConsumer.poll
+SimpleConsumer.fetch, send
+
+17.怎么手动维护offset
+关闭自动提交，调用Consumer.commitSync();，将offset保存在redis，mysql之类的。
+```
 
 
