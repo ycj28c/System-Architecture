@@ -1,4 +1,4 @@
-Webpack简介
+### Webpack简介
 ```
 为什么需要webpack：
 因为现在的前端技术太多了，什么vue，less，react等等，浏览器是无法直接识别的，就需要webpack来打包处理
@@ -34,13 +34,13 @@ https://segmentfault.com/a/1190000006178770
 
 这里是学习笔记了
 
-01 课程介绍
+### 01 课程介绍
 ```
 Nodejs 10 版本以上
 webpack 4.26 版本以上
 ```
 
-02 webpack简介
+### 02 webpack简介
 ```
 1）CSS代码：
 less可以包裹使用，比如这么写
@@ -64,7 +64,7 @@ import './index.less';
 会以为indexjs为入口，里面的资源形成chunk，将资源js/json/css/img/less/...进行打包，形成bundle。
 ```
 
-03 webpack五个核心概念
+### 03 webpack五个核心概念
 ```
 1）Entry
 指示webpack以那个文件为入口为起点开始打包，上面例子就是index.js
@@ -81,7 +81,7 @@ import './index.less';
 包括development模式（能调试）和production模式
 ```
 
-04 webpack的初体验
+### 04 webpack的初体验
 ```
 安装依赖
 $ npm init
@@ -104,7 +104,7 @@ import './index.css';
 核心就是将ES6模块化编译成浏览器能识别的模块化
 ```
 
-05 打包样式资源
+### 05 打包样式资源
 ```
 webpack如何报道css/less呢？需要loader。
 首先增加webpack.config.js，下面这个是webpack的配置文件（是commonjs格式）：
@@ -162,7 +162,7 @@ $ npm i less-laoder less -D
 $ webpack
 ```
 
-06 打包html资源
+### 06 打包html资源
 ```
 同样在webpack.config.js定义，
 html是需要通过plugins来处理的，
@@ -196,7 +196,7 @@ module.exports = {
 $ npm i html-webpack-plugin -D
 ```
 
-07 打包图片资源
+### 07 打包图片资源
 ```
 index.js中
 import './index.less';
@@ -258,7 +258,7 @@ module.exports = {
 $ npm i url-loader file-loader html-loader -D
 ```
 
-08 打包其他资源
+### 08 打包其他资源
 ```
 比如字体资源的打包
 
@@ -308,7 +308,7 @@ module.exports = {
 就会在build里面生成一堆字体文件了
 ```
 
-09 devServer
+### 09 devServer
 ```
 const { resolve } = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
@@ -350,7 +350,7 @@ $ npx webpack-dev-server
 这样每次一改变webpack里面的代码，就自动实时编译了，很方便
 ```
 
-10 开发环境基本配置
+### 10 开发环境基本配置
 ```
 大综合，将之前各个资源的配置整合起来的demo
 
@@ -367,7 +367,7 @@ module.exports={entry:'./src/js/index.js',output:{filename:'js/built.js',path:re
 [看课件]
 (https://s8jl-my.sharepoint.com/personal/atguigu_s8jl_onmicrosoft_com/_layouts/15/onedrive.aspx?originalPath=aHR0cHM6Ly9zOGpsLW15LnNoYXJlcG9pbnQuY29tLzpmOi9nL3BlcnNvbmFsL2F0Z3VpZ3VfczhqbF9vbm1pY3Jvc29mdF9jb20vRW9zb2FhVlRmSXRCdnZHalhwTWhJdUlCbGFDYWtOR2F2Mm1COGliRE5zZmRZUT9ydGltZT1ybXh6REQtbTJFZw&id=%2Fpersonal%2Fatguigu%5Fs8jl%5Fonmicrosoft%5Fcom%2FDocuments%2Fwebpack%E8%B5%84%E6%96%99%2F%E8%AF%BE%E4%BB%B6%2F%E5%B0%9A%E7%A1%85%E8%B0%B7%E5%89%8D%E7%AB%AF%E6%8A%80%E6%9C%AF%E4%B9%8Bwebpack%E4%BB%8E%E5%85%A5%E9%97%A8%E5%88%B0%E7%B2%BE%E9%80%9A%28%E4%B8%8A%29%2Epdf&parent=%2Fpersonal%2Fatguigu%5Fs8jl%5Fonmicrosoft%5Fcom%2FDocuments%2Fwebpack%E8%B5%84%E6%96%99%2F%E8%AF%BE%E4%BB%B6)
 
-11 构建环境介绍
+### 11 构建环境介绍
 ```
 生产环境区别
 1）css -> js，因为js太大，加载慢可能闪屏，所以开发环境要分开
@@ -375,7 +375,7 @@ module.exports={entry:'./src/js/index.js',output:{filename:'js/built.js',path:re
 3）兼容性很重要，一些高级版本需要增加前缀才能被浏览器识别
 ```
 
-12 提取css成单独文件
+### 12 提取css成单独文件
 ```
 单独的css需要插件plugin的帮助
 
@@ -419,7 +419,7 @@ module.exports = {
 $ npm i minis-css-extract-plugin -D
 ```
 
-13 css兼容性处理
+### 13 css兼容性处理
 ```
 这个特性非常好，工具插件自动把兼容性做好了，只要配置好插件就行，不过和maven一看要学习怎么配置
 
@@ -490,7 +490,7 @@ module.exports = {
 $ npm i postcss-loader postcss-preset-env -D
 ```
 
-14 压缩css
+### 14 压缩css
 ```
 css变小了，能让下载速度更快，让代码运行也更快。
 需要使用插件optimize-css-assets-webpack-plugin
@@ -520,7 +520,7 @@ module.exports = {
 $ npm i optimize-css-assets-webpack-plugin -D
 ```
 
-15 js语法检查eslint
+### 15 js语法检查eslint
 ```
 const { resolve } = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
@@ -557,7 +557,7 @@ module.exports = {
 具体的配置搜索npm中的eslint-config-airbnb-base插件使用指南即可
 ```
 
-16 js兼容性处理eslint
+### 16 js兼容性处理eslint
 ```
 可以将es6转换问es5以下的代码，
 比如下面的es6的javascript代码
@@ -643,7 +643,7 @@ const promise = new Promise((resolve) => {
 })
 ```
 
-17 压缩html和js
+### 17 压缩html和js
 ```
 js代码的压缩是自动的：
 const { resolve } = require('path');
@@ -688,7 +688,7 @@ module.exports = {
 }
 ```
 
-18 生产环境基本配置
+### 18 生产环境基本配置
 ```
 这个就是基本配置的模板了：
 
