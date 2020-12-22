@@ -1,4 +1,4 @@
-## Webpack简介
+Webpack简介
 ```
 为什么需要webpack：
 因为现在的前端技术太多了，什么vue，less，react等等，浏览器是无法直接识别的，就需要webpack来打包处理
@@ -363,10 +363,9 @@ $ npx webpack-dev-server
 
 const{resolve}=require('path');constHtmlWebpackPlugin=require('html-webpack-plugin');
 module.exports={entry:'./src/js/index.js',output:{filename:'js/built.js',path:resolve(__dirname,'build')},module:{rules:[//loader的配置{//处理less资源test:/\.less$/,use:['style-loader','css-loader','less-loader']},{//处理css资源test:/\.css$/,use:['style-loader','css-loader']},{//处理图片资源test:/\.(jpg|png|gif)$/,loader:'url-loader',options:{limit:8*1024,name:'[hash:10].[ext]',//关闭es6模块化esModule:false,outputPath:'imgs'}},{//处理html中img资源test:/\.html$/,loader:'html-loader'},{//处理其他资源exclude:/\.(html|js|css|less|jpg|png|gif)/,loader:'file-loader',options:{name:'[hash:10].[ext]',outputPath:'media'}}]},plugins:[//plugins的配置newHtmlWebpackPlugin({template:'./src/index.html'})],mode:'development',devServer:{contentBase:resolve(__dirname,'build'),compress:true,port:3000,open:true}};
-
+```
 [看课件]
 (https://s8jl-my.sharepoint.com/personal/atguigu_s8jl_onmicrosoft_com/_layouts/15/onedrive.aspx?originalPath=aHR0cHM6Ly9zOGpsLW15LnNoYXJlcG9pbnQuY29tLzpmOi9nL3BlcnNvbmFsL2F0Z3VpZ3VfczhqbF9vbm1pY3Jvc29mdF9jb20vRW9zb2FhVlRmSXRCdnZHalhwTWhJdUlCbGFDYWtOR2F2Mm1COGliRE5zZmRZUT9ydGltZT1ybXh6REQtbTJFZw&id=%2Fpersonal%2Fatguigu%5Fs8jl%5Fonmicrosoft%5Fcom%2FDocuments%2Fwebpack%E8%B5%84%E6%96%99%2F%E8%AF%BE%E4%BB%B6%2F%E5%B0%9A%E7%A1%85%E8%B0%B7%E5%89%8D%E7%AB%AF%E6%8A%80%E6%9C%AF%E4%B9%8Bwebpack%E4%BB%8E%E5%85%A5%E9%97%A8%E5%88%B0%E7%B2%BE%E9%80%9A%28%E4%B8%8A%29%2Epdf&parent=%2Fpersonal%2Fatguigu%5Fs8jl%5Fonmicrosoft%5Fcom%2FDocuments%2Fwebpack%E8%B5%84%E6%96%99%2F%E8%AF%BE%E4%BB%B6)
-```
 
 11 构建环境介绍
 ```
