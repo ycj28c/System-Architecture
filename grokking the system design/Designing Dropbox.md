@@ -104,7 +104,20 @@ a.Post-process deduplication
 b.In-line deduplication  
 可以实时进行deduplication hash计算。当某个chuck被判断为已经存在，只记录和发送metadata用于reference。
 
+### 9.Metadata Partitioning
+在scale metadata db有两种方式：  
+1.Vertical Partitioning：就是分表，比如把user相关表放到数据库A，文件相关表放到数据库B。不过有以下问题，当有trillion的chunks的时候仍然有单表过大的问题，而且join两个表会非常慢。  
+2.Range Based Partitioning：可以通过首字母分表，比如A开头和B开头的放到不同的表去，这样会导致表大小不平衡，比如E开头的就特别多。  
+3.Hash-Based Partitioning：通过Hash功能，比如把FileID平均hash到[1-256]的区间去
 
+### 10. Caching
+在处理热门files/chunks使用类似Memcached的键值cache，一个商业cache大概有144GB的内存，这样的服务器可以cache36k的chunks。类似的cache机制有LRU之类。
+
+### 11. Load Balancer (LB)
+在client和Block servers之间，还有client和Metadata server之间都可以加LB。通常的LB可以使用Round Robin，服务器轮流接受请求，不过可能存在服务器已经满负荷仍然向其发送请求的情况，所以可以配置更高级的LB机制（根据服务器负载来或者机器性能来等等）。
+
+### 12. Security, Permissions and File Sharing
+用户需要将文件存放到cloud，所以安全security和隐私privacy很重要。尤其是用户将文件public或者共享给其他用户的场景，我们需要再metadata DB存放每个文件的permission来决定哪个文件可以显示给哪个用户。
 
 ### 总结
 具体indexer的使用，还有本地的详细设计
