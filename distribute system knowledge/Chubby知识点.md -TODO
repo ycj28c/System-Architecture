@@ -1,0 +1,3 @@
+Google Chubby是一个分布式锁服务，Chubby底层一致性实现就是以Paxos为基础的。
+
+看起来和zookeeper很像
