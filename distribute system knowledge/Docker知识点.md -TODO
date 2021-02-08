@@ -1,1 +1,46 @@
 Portainer.io作为docker容器管理
+
+[01 尚硅谷 Docker教程 前提知识要求和课程简介](https://www.youtube.com/watch?v=37b3cWIIxUg&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33)
+
+[02 尚硅谷 Docker 为什么会出现](https://www.youtube.com/watch?v=e9PDl3Kk-nU&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=2)
+```
+主要解决开发和运维中间的“在我的机器上好使”的问题，保证环境的一致性。
+代码/配置/系统/数据全部打包为一个整体。
+```
+
+[03 尚硅谷 Docker 理念](https://www.youtube.com/watch?v=jKKzkwyUq-8&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=3)
+```
+一次封装，到处使用，和集装箱的突破性理念是一样的。
+```
+
+[04 尚硅谷 Docker 是什么](https://www.youtube.com/watch?v=OIoVwmHNfr8&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=4)
+
+
+[05 尚硅谷 Docker 能干什么](https://www.youtube.com/watch?v=T8iPSVjQpks&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=5)
+```
+虚拟机 vs Docker
+虚拟机也会模拟硬件，Docker只保留软件工作所需要的资源和设置，容器没有自己的内核，就是浓缩的linux。
+促使了Devops职业的诞生，然后就没纯运维的事了。
+CentOS本身大概4G，但是Docker基础镜像只有170M，很轻便。
+```
+
+[06 尚硅谷 Docker 三要素](https://www.youtube.com/watch?v=8hCQ-sxfBIA&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=6)
+```
+安装docker是有一系列要求的。比如CentOS和Windows上安装都有具体的内核或者版本要求。
+Docker Hub和Github的概念很像，Client基本命令:
+docker build
+docker pull
+docker run
+
+三要素：
+1.镜像image：就是模板。
+2.容器containter：就是模板的一个实例，可以启动，停止，删除。
+3.仓库repository：就是存放镜像的地方。分为公开库（hub.docker.com）和私有库。
+```
+
+
+
+
+
+
+
