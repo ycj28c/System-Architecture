@@ -38,9 +38,135 @@ docker run
 3.仓库repository：就是存放镜像的地方。分为公开库（hub.docker.com）和私有库。
 ```
 
+7-9 跳过
 
+[10 尚硅谷 Docker helloworld镜像](https://www.youtube.com/watch?v=cFlszZTbQ_4&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=10)
+```
+$ docker run hello-world
+先去本地Docker domain找container，没有就找镜像，再没有就去远程repository去pull。
+注意这个命令是全局的，在哪运行都可以。
 
+因为第一次跑，所以会自动下载到本地的docker客户端（我用win10）
+```
 
+[11 尚硅谷 Docker 运行底层原理](https://www.youtube.com/watch?v=BW9471j-2qM&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=11)
+```
+docker是CS结构，docker守护进程运行在主机上，客户端通过守护进程管理各个容器。
 
+虚拟机：Infrastructure -> Operating System -> Hypervisor(实现引荐资源虚拟化） -> CentOS -> Bins/Libs各种依赖库 -> App
+Docker： Infrastructure -> Operating System -> Docker System -> App
 
+Docker没有Hypervisor层和CentOS层面和Lib层，利用宿主机的内核(操作系统)，使用实际物理机硬件资源，有明显优势。
+```
 
+[12 尚硅谷 Docker 帮助命令](https://www.youtube.com/watch?v=DdJDKAqW1YQ&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=12)
+```
+# 看版本
+$ docker version
+# 看详细docker信息
+$ docker info
+# 帮助
+$ docker --help
+```
+
+[13 尚硅谷 Docker 镜像命令](https://www.youtube.com/watch?v=jFgJCKDlnAs&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=13)
+```
+# 看本地所有images
+$ docker images
+$ docker images -a
+$ docker images -q
+
+# 到docker hub上搜索tomcat的image
+$ docker search tomcat
+# 显示点赞数/stars超过30的
+$ docker search -s 30 tomcat
+
+# 下载tomcat镜像image
+$ docker pull tomcat
+# 注意默认是下载latest(docker pull tomcat:latest)，特定版本请修改如下
+$ docker pull tomcat:8.0
+
+# 删除镜像hello-world
+$ docker rmi hello-world
+# 注意如果有多个版本也需要加上版本号，默认是tomcat:latest
+$ docker pull tomcat:8.0
+# 强制删除，即使in use
+$ docker rmi -f hello-world
+# 删除多个，这里是同时删除hell-world,nginx的例子
+$ docker rmi -f hello-workd nginx
+```
+
+[14 尚硅谷 Docker 容器命令上](https://www.youtube.com/watch?v=zw7uGug9sDw&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=14)
+```
+# 使用centos做例子
+$ docker pull centos
+# 生成实例，可以使用--name来设置别名
+# -i 表示用"交互"模式运行容易，-t 表示为容器分配一个伪输入中断，通常两者配合使用
+$ docker run -it --name mycentos2021 centos
+# 这样就启动并且自动进入到了docker容器的centos镜像
+
+# 退出交互中断（容器停止退出），Ctrl + P + Q容器不停止退出 
+[root@7653941ada2f /]# exit
+
+# 看所有container
+$ docker ps
+# 看历史上运行情况
+$ docker ps -a
+# 就看两个
+$ docker ps -n 2
+
+# 重启已经创建的容器
+$ docker restart 7653941ada2f
+# 停止容器
+$ docker stop 7653941ada2f
+# 强制停止容器
+$ docker kill 7653941ada2f
+# 删除已经停止的容器
+$ dokcer rm 7653941ada2f
+# 批量删除（类似liunx命令）
+$ docker rm -f(docker ps -a -q)
+$ docker ps -a -q | xargs docker rm
+```
+
+[15 尚硅谷 Docker 容器命令下](https://www.youtube.com/watch?v=OaP9uYf_QBw&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=15)
+```
+# 后台运行mini版本centos的docker
+$ docker run -d centos
+# 注意这个不会实际启动，因为centos需要交互，不进行交互直接就关闭了
+# 所以可以用下面这种方式让centos一直运行
+$ docker run -d centos /bin/sh -c "while true;do echo hello zzyy; sleep 2;done"
+# 查看日志
+$ docker logs -f -t --tail 7653941ada2f
+# 查看某个container内部运行的进程
+$ docker top 7653941ada2f
+# 显示某个container内部的具体细节
+$ docker inspect 7653941ada2f
+
+# 演示退出交互后继续进入容器，先启动centos
+$ docker run -it centos /bin/bash
+# 就是在centos的容器7653941ada2f内运行 "ls -l /tmp" 命令
+$ docker exec -t 7653941ada2f ls -l /tmp
+# 重新进入终端了
+$ docker exec -t 7653941ada2f /bin/bash
+
+# 从容器内拷贝文件到主机上
+# 注意容器停止了内部的文件就没了，所以可能会需要拷贝出来
+# 这是将容器中/tmp/yum.log拷贝到本机的/root下面
+$ docker cp 7653941ada2f:/tmp/yum.log /root
+```
+
+[16 尚硅谷 Docker 镜像原理](https://www.youtube.com/watch?v=B8c1ui1hDTw&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=16)
+```
+docker镜像是一种轻量级，可执行的独立软件包，打包了软件的运行环境和基于运行环境的软件。
+
+UnionFS（联合文件系统）：是一种分层，轻量级并且高性能的文件系统，它支持对文件系统的修改作为一次提交来一层层的叠加。Union文件系统是Docker镜像的基础。
+
+必要组成（TODO 不是很理解）：
+bootfs(boot file system)主要包括了bootloader和kernel，bootloader用于引导加载kernel，linux刚启动时候会加载bootfs文件系统，在Docker镜像的最底层是bootfs。当boot加载完成之后整个内核都在内存中了，此时内存的使用权已由bootfs转交给内核，此时系统也会卸载bootfs。
+rootfs（root file system），在bootfs之上。包含就是典型的linux系统中的/dev,/proc,/bin,/etc等标准目录和文件。rootfs就是各种不同的操作系统发行版，比如Ubuntu，Centos等等。
+
+一个centos的镜像只有200M，但是Tomcat却需要近500M，这是什么原理？
+因为Tomcat一个容器需要能独立运行，所以需要依赖。对于tomcat来说，它的container大致是Kernel -> 叠加CentOS -> 叠加JDK8.0 -> 叠加Tomcat，因为堆了这么多文件，所以tomcat镜像就大了。
+
+用UnionFS的好处是每一层的文件系统可以被共享。
+```
