@@ -170,3 +170,68 @@ rootfs（root file system），在bootfs之上。包含就是典型的linux系�
 
 用UnionFS的好处是每一层的文件系统可以被共享。
 ```
+
+[17 尚硅谷 Docker 镜像commit](https://www.youtube.com/watch?v=ddk5jb85G-M&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=17)
+```
+一个Tomcat的例子：
+1.从Hub下载Tomcat到本地
+$ docker pull tomcat
+
+2.启动docker tomcat
+# （-p表示docker container内的端口8080暴露到外部的8888端口）
+$ docker run -it -p 8888:8080 tomcat 
+# （大P表示随机端口）
+$ docker run -it -P tomcat 
+
+3.故意删除tomcat中的文档
+$ docker exec -it 94682dg34s /bin/bash
+# 进入webapp目录
+$ rm -rf docs
+
+4.创建自己的镜像
+# 生成atguigu/mytomcat 1.2版本镜像文件，提交到docker hub
+$ docker commit -a="author" -m="commit message" 94682dg34s atguigu/mytomcat:1.2
+
+# 启动自己的镜像
+$ docker run -it -p 7777:8080 atguigu/mytomcat:1.2
+# 浏览器打开本地7777端口 localhost:7777/docs/ 已经被删除
+```
+
+[18 尚硅谷 Docker 容器数据卷介绍](https://www.youtube.com/watch?v=TLl1EXQzM58&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=18)
+```
+主要是持久化的考虑。因为docker的container一旦删除，里面的数据就没了。
+容器数据卷可以进行容器和容器，容器到主机，和主机到容器之间的数据共享。
+```
+
+[19 尚硅谷 Docker 容器数据卷用V命令添加](https://www.youtube.com/watch?v=27WmFTlpcnE&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=19)
+```
+1.命令直接
+# 主机建立hostData文件夹
+# 连接本地的hostData文件夹和docker文件夹脸上
+$ docker run -it -v /hostData:/dockerData centos
+# 可以在inspect里面看到valume被关上，有读写权限
+$ docker inspect
+
+主机上：
+$ cd hostData
+$ touch host.txt
+在容器内:
+$ docker run -it centos /bin/bash
+# 在容器内看到host.txt
+[root@7653941ada2f /]# vi host.txt
+# 同理，在容器内增加文件，主机也会同步显示
+
+# 重启docker（退出容器）
+$ docker start f8935dfgs
+$ docker attach f8935dfgs
+# docker的数据还是保留的，这就是mount是一样的
+
+# 写保护挂在valume
+$ docker run -it -v /hostData:/dockerData：ro centos
+# 容器无法修改host.txt了，但是主机的修改没有问题
+```
+
+[20 尚硅谷 Docker 容器数据卷用DockerFile添加](https://www.youtube.com/watch?v=NcRkN7kHkTE&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=20)
+```
+
+```
