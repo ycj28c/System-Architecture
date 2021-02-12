@@ -233,5 +233,247 @@ $ docker run -it -v /hostData:/dockerData：ro centos
 
 [20 尚硅谷 Docker 容器数据卷用DockerFile添加](https://www.youtube.com/watch?v=NcRkN7kHkTE&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=20)
 ```
+看DockerFile就可以看到这个包是怎么集成的。
+可以在hub.docker.com上找包的dockerFile
 
+# 创建dockerFile
+$ vi Dockerfile
+# 写入内容
+FROM centos
+VOLUME ["/dataVolumeContainer1","/dataVolumeContainer2"]
+CMD echo "finished, success1"
+CMD /bin/bash
+# 相当于
+docker run -it -v /host1:/dataVolumeContainer1 -v /host2:/dataVolumeContainer2 centos /bin/bash
+
+# 创建docker镜像
+# 获得一个镜像 zzyy/centos
+$ docker build -f /mydocker/dockerfile2 -t zzyy/centos .
+$ docker images zzyy/centos
+$ run -it zzyy/centos 
+# 看到容器卷dataVolumeContainer1和dataVolumeContainer2已经创建在容器内
+[root@7653941ada2f /]# ll
+# 创建一个临时文件tmp.txt观察和主机的交互
+[root@7653941ada2f /]# touch tmp.txt
+
+$ docker ps
+$ docker inspect 7653941ada2f
+# 看到会在宿主机上生成一个默认的文件目录
+```
+
+[尚硅谷 Docker 容器数据卷volumes from](https://www.youtube.com/watch?v=LszNIOWV4KQ&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=21)
+```
+# 启动刚才自己做的那个zzyy/centos镜像，叫它dc01
+$ docker run -it --name dc01 zzyy/centos
+# 通过valume继承的方式依次建立dc02, dc03
+$ docker run -it --name dc02 --volumes-from dc01 zzyy/centos
+$ docker run -it --name dc03 --volumes-from dc01 zzyy/centos
+# 发现这个容器卷可是在3个docker container内都是共享使用的
+
+# 此时删除dc01父镜像
+$ docker rm -f dc01
+# 发现dc02和dc03完成不受影响，仍然volume共享
+$ docker attach dc02
+[root@7653941ada2f /] ll
+```
+
+[22 尚硅谷 Docker Dockerfile是什么](https://www.youtube.com/watch?v=3rF2eOV8sYU&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=22)
+```
+就是docker镜像的构建文件
+```
+
+[23 尚硅谷 Docker DockerFile构建过程解析](https://www.youtube.com/watch?v=O134IztsiMc&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=23)
+```
+大致构建过程：
+就是根据dockerfile里头写的呗，注意必须有from一个基础镜像
+```
+
+[24 尚硅谷 Docker DockerFile保留字指令](https://www.youtube.com/watch?v=G1Dr1081L9c&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=24)
+```
+# dockerfile基础指令介绍
+FROM 基础镜像来源
+MAINTAINER 镜像维护者的姓名邮箱
+RUN 容器构建是需要运行的命令
+EXPOSE 暴露端口号
+WORKDIR 指定登录container以后的落脚点，默认是/根目录
+ENV 设置环境变量
+ADD 拷贝 + 解压，比如ADD centos-7-docker.tar，将宿主机目录下文件拷贝到镜像
+COPY 拷贝
+VOLUME 就是挂硬盘卷
+CMD 指定一个容器启动时要运行的命令，如果有多个只有最后一个生效，所以加上/bin/bash会覆盖它
+ENTRYPOINT 和CMD一样，不会覆盖，是追加
+ONBUILD 继承dockerfile时运行，父镜像被子继承后父镜像onbuild会触发
+```
+
+[25 尚硅谷 Docker DockerFile案例 自定义镜像mycentos](https://www.youtube.com/watch?v=xifL_E8cS8s&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=25)
+```
+默认的centos镜像只有内核，很精简不包含vim或者ifconfig指令，这里的例子就是进行重构一个包含这两项指令的image
+
+# 详细dockerfile指令，假设这个文件path在/mydocker/Dockerfile2
+FROM centos
+
+ENV MYPATH /usr/local
+WORKDIR $MYPATH
+
+RUN yum -y install vim
+RUN yum -y install net-tools
+
+EXPOSE 80
+
+CMD echo $MYPATH
+CMD echo "success ------------ ok"
+CMD /bin/bash
+
+# 进行编译
+$ docker build -f /mydocker/Dockerfile2 -t mycentos:1.3 .
+# 查看本地镜像
+$ docker images mycentos
+# 运行该镜像
+$ docker run -it mycentos:1.3
+# 发现container进行以后就包含了vim和ifconfig了
+# 此外可以用history看镜像编译的详细流程
+$ docker history 5235df423df
+```
+
+[26 尚硅谷 Docker DockerFile案例 CMD ENTRYPOINT命令案例](https://www.youtube.com/watch?v=BYuxlnEo9Mc&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=26)
+```
+# 让docker能够进行curl，演示ENTRYPOINT
+# /mydocker/Dockerfile3 
+FROM centos
+RUN yum install -y curl
+ENTRYPOINT ["curl", "-s", "http://ip.cn"]
+
+$ docker build -f /mydocker/Dockerfile3 -t myip .
+$ docker run -it myip
+# 显示 当前IP:218.22.22.33，也就是curl ip.cn返回的结果
+
+# 显示curl头文件，需要-i，类似 curl -s http://ip.cn -i
+$ docker run -it myip -i
+```
+
+[27 尚硅谷 Docker DockerFile案例 ONBUILD命令案例](https://www.youtube.com/watch?v=H6XHVFdVeeU&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=27)
+```
+# 演示ONBUILD的使用，就是
+# /mydocker/Dockerfile4 
+FROM centos
+RUN yum install -y curl
+ENTRYPOINT ["curl", "-s", "http://ip.cn"]
+ONBUILD RUN echo "Father image is triggered by ONBUILD"
+# 创建myip_father这个image
+$ docker build -f /mydocker/Dockerfile4 -t myip_father .
+
+# /mydocker/Dockerfile5，注意继承父类
+FROM myip_father
+RUN yum install -y curl
+ENTRYPOINT ["curl", "-s", "http://ip.cn"]
+# 创建myip_son这个image
+$ docker build -f /mydocker/Dockerfile5 -t myip_son .
+# 注意创建的时候就出发了父类的触发器
+```
+
+[28 尚硅谷 Docker DockerFile案例 自定义的tomcat9](https://www.youtube.com/watch?v=ATgPQervmQw&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=28)
+```
+# 演示ADD和COPY的使用
+# 先准备好3个文件：apache-tomcat-9.0.8.tar.gz, c.txt, jdk-8u171-linux-x64.tar.gz
+# /mydockerfile/tomcat9 内容
+
+FROM centos 
+MAINTAINER zzyy<xxx@gmail.com>
+# 把宿主机当前上下文的c.txt拷贝到容器/usr/local/路径下
+COPY c.txt /usr/local/cincontainer.txt
+# 把java与tomcat添加到容器中
+ADD jdk-8u171-linux-x64.tar.gz /usr/local/
+ADD apache-tomcat-9.0.8.tar.gz /usr/local/
+# 安装vim编辑器
+RUN yum -y install vim
+# 设置工作访问时候的WORKDIR路径，登录落脚点
+ENV MYPATH /usr/local
+WORKDIR $MYPATH
+# 配置java与tomcat环境变量
+ENV JAVA_HOME /usr/local/jdk1.8.0_171
+ENV CLASSPATH $JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar
+ENV CATALINA_HOME /usr/local/apache-tomcat-9.0.8
+ENV CATALINA_BASE /usr/local/apache-tomcat-9.0.8
+ENV PATH $PATH:$JAVA_HOME/bin:$CATALINA_HOME/lib:$CATALINA_HOME/bin
+# 容器运行时监听的端口
+EXPOSE 8080
+# 启动时候运行tomcat
+# ENTRYPOINT ["/usr/local/apache-tomcat-9.0.8/bin/startup.sh"]
+# CMD ["/usr/local/apache-tomcat-9.0.8/bin/catalina.sh","run"]
+CMD /usr/local/apache-tomcat-9.0.8/bin/startup.sh && tail -F /usr/local/apache-tomcat-9.0.8/bin/logs.catalina.out 
+
+# 创建镜像
+$ docker build -t zzyytomcat9 .
+# 多多熟悉下列的命令
+$ docker run -d -p 9080:8080 --name myt9 -v /mydockerfile/tomcat9/test:/usr/local/apache-tomcat-9.0.8/webapps/test -v /mydockerfile/tomcat9/tomcat9logs/:/usr/local/apache-tomcat-9.0.8/logs --privileged=true tomcat9
+```
+
+[29 尚硅谷 Docker DockerFile案例 自定义的tomcat9上发布演示](https://www.youtube.com/watch?v=2WnoW3dJijg&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=29)
+```
+自己在tomcat9的容器内加个页面，就正常使用了
+```
+
+[30 尚硅谷 Docker DockerFile小总结](https://www.youtube.com/watch?v=EX4htYS9T14&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=30)
+```
+就是复习下
+```
+
+[31 尚硅谷 Docker 安装mysql](https://www.youtube.com/watch?v=5VQ7bTyznmU&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=31)
+```
+# 找mysql5.6最多的镜像
+$ docker search mysql:5.6
+$ docker pull mysql:5.6
+# -d 是后台运行的意思， -e 是配置环境
+$ docker run -p 12345:3306 --name mysql -v zzyy/mysql/conf:/etc/mysql/conf.d -v zzyy/mysql/logs:logs -v zzyy/mysql/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=123456 -d mysql:5.6
+$ docker ps
+$ docker exec -it s32dg4234 /bin/bash
+# 登录到mysql
+[root@s32dg4234]# ps -ef
+[root@s32dg4234]# mysql -uroot -p
+# 进入mysql并创建库和表
+mysql > show databases
+mysql > create database db01;
+mysql > use db01;
+mysql > create table t_book(id int not null primary key, bookName varchar(20);
+mysql > insert into t_book values(1, 'java');
+mysql > select * from t_book;
+
+# 将docker镜像内的mysql dump文件输出到宿主机的all-databases.sql里去
+$ docker exec s32dg4234 sh -c ' exec mysqldump --all-databases -uroot -p"123456" ' > /zzyy/all-databases.sql
+```
+
+[32 尚硅谷 Docker 安装Redis](https://www.youtube.com/watch?v=IdM_2fshLog&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=32)
+```
+$ docker pull redis:3.2
+# appendonly yes 是开始redis的aof备份的意思
+$ docker run -p 6379:6379 /zzyy/myredis/data:data -v /zzyy/myredis/conf/redis.conf:/usr/local/etc/redis/redis.conf -d redis:3.2 redis-server /usr/local/etc/redis/redis.conf --appendonly yes
+# 增加redis的配置文件
+[root@s32dg4234]# vim /zzyy/myredis/conf/redis.conf/redis.conf
+[root@s32dg4234]# cd /zzyy/myredis/conf/redis
+# 登录redis使用
+$ docker exec -it s32dg4234 redis-cli
+127.0.0.1 > set k1 v1
+OK
+127.0.0.1 > set k2 v2
+OK
+127.0.0.1 > SHUTDOWN
+```
+
+[33 尚硅谷 Docker 本地镜像推送到阿里云](https://www.youtube.com/watch?v=d-alo1DXgbo&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=33)
+```
+docker的registry也有共有云(docker hub)和私有云的区别
+
+$ docker run -it mycentos:1.3
+# 使用1.3的container生成了1.4版本
+$ docker commt -a zzyy -m "new mycentos with vim and ifconfig" df25sdg53 mycentos:1.4
+
+# 推送到阿里云的例子
+$ sudo docker login --username= registry.cn-hangzhou.aliyuncs.com
+$ sudo docker tag [ImageId] registry.cn-hangzhou.aliyuncs.com/zzyy/mycentos:[镜像版本号]
+$ sudo docker push registry.cn-hangzhou.aliyuncs.com/zzyy/mycentos:[镜像版本号]
+```
+
+[34 尚硅谷 Docker CentOS7安装Docker（补充知识）](https://www.youtube.com/watch?v=FKRK-3hC148&list=PLmOn9nNkQxJFX0YVLDw5EMUL-4cVzXL33&index=34)
+```
+跳过
 ```
