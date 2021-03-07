@@ -92,9 +92,9 @@ $100 - $200
 3.提高单机性能  
 
 ## Reference
-[数据库分片（Database Sharding)详解](https://zhuanlan.zhihu.com/p/57185574)
+1.[数据库分片（Database Sharding)详解](https://zhuanlan.zhihu.com/p/57185574)  
+2.[MongoDB Shard Keys](https://docs.mongodb.com/manual/core/sharding-shard-key/#sharding-shard-key-selection)  
 
 
 
 
-https://docs.mongodb.com/manual/core/sharding-shard-key/#sharding-shard-key-selection
