@@ -3,6 +3,8 @@ Shard知识点
 ## 什么是sharding（分片）
 通常来说，分片（Sharding）是一种与水平切分（horizontal partitioning）相关的数据库架构模式——将一个表里面的行，分成多个不同的表的做法（称为分区）。每个区都具有相同的模式和列，但每个表有完全不同的行。同样，每个分区中保存的数据都是唯一的，并且与其他分区中保存的数据无关。
 
+分片主要是针对SQL来说的，因为NoSQL就是这么设计的，每一个Node就相当于一个Shard。
+
 ## Sharding和Partition的区别
 Sharding不是一个某个特定数据库软件附属的功能，而是在具体技术细节之上的抽象处理，是水平扩展(Scale Out，亦或横向扩展、向外扩展)的解决方案，其主要目的是为突破单节点数据库服务器的 I/O 能力限制，解决数据库扩展性问题。
 
@@ -86,12 +88,28 @@ $100 - $200
 
 通常Sharding是大招，在之前可以先尝试其他解决方案，比如:  
 1.加入缓存进行优化  
-2.多个只读副本replica  
+2.一主带多重，多个只读副本replica  
 3.提高单机性能  
+
+ps：其实关系型数据库比如MySQL也有集群，比如MySQL cluster，但是用法是不一样的，比如只能使用存储引擎 NDB，一个事务在提交前查询不到在事务内所做的修改，外键支持性能不好。作为分布式的数据库系统，各个节点之间存在大量的数据通讯，比如所有访问都是需要经过超过一个节点（至少有一个 SQL Node和一个 NDB Node）才能完成，因此对节点之间的内部互联网络带宽要求高等问题。
+
+## 分片的管理
+查询服务如何知道与哪个分片进行通信以检索数据？ 如果你正在考虑一个中间件，那么就走对了。 一种解决方案是将代理（如负载平衡器）放置在查询服务和数据库的前面。 在引擎盖下，负载平衡器依赖于诸如ZooKeeper之类的配置服务来跟踪分片及其索引。 通过处理查询，负载均衡器将确切知道将请求定向到哪个分片。
+```
+Query service -- > Cluster Proxy(LB) ----------- > ShardA(A-F)
+                        |            ----------- > ShardB(G-L)
+                        |            ----------- > ShardC(M-Z)
+                   Configuration Service (Zookeeper)     
+```
+这个LB可以是用户自己写的Cluster Proxy/Shard Service，需要满足自己的分片逻辑，比如根据首字母Range分片。  
+分区的配置文件通过Zookeeper统一管理，Zookeeper既保证配置文件一致，又可以监控机器在线退出和master，是个分布式强一致存储。
 
 ## Reference
 1.[数据库分片（Database Sharding)详解](https://zhuanlan.zhihu.com/p/57185574)  
 2.[MongoDB Shard Keys](https://docs.mongodb.com/manual/core/sharding-shard-key/#sharding-shard-key-selection)  
+3.[多图文，详细介绍mysql各个集群方案](https://blog.csdn.net/weixin_43750212/article/details/104778156)  
+4.[mysql分片、分区、分表、分库](https://blog.51cto.com/net881004/2109383)  
+5.[怎么扩展数据库和Nosql数据库——系统设计](https://zhuanlan.zhihu.com/p/139214419)
 
 
 
