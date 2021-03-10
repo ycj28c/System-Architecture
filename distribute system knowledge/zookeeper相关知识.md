@@ -30,29 +30,29 @@ https://zhuanlan.zhihu.com/p/75161633
 数据不能存在单点上，分布式系统对fault tolorence一般就是state machine replication，所以这个强一致性就是要state machine replication的consensus(共识)算法。
 
 强一致性要求：
-1）顺序一致性
-2）原子性
-3）单一的系统映像
-4）持久性
+1）顺序一致性  
+2）原子性  
+3）单一的系统映像  
+4）持久性  
 
 强一致性方式包括：
-1）主从同步：一主一从，一主多从等，这种方式的可用性特别差。  
-2）多数派：每次写和读都要保证N/2+1个节点成功，纯粹的多数派机制在并发情况下可能无法保证顺序，导致脏数据。  
-3）使用类似Paxos的算法，下面详细讨论  
+1）主从同步：一主一从，一主多从等，这种方式的可用性特别差。   
+2）多数派：每次写和读都要保证N/2+1个节点成功，纯粹的多数派机制在并发情况下可能无法保证顺序，导致脏数据。   
+3）使用类似Paxos的算法，下面详细讨论   
 
 Basic Paxos：  
-角色太多，有client，proposer，acceptor，learner等，不容易开发，流程也太复杂
+角色太多，有client，proposer，acceptor，learner等，不容易开发，流程也太复杂  
 
 Multi Paxos：  
-减少了角色，不过还是较难理解，传统的数据库比如MySQL也可以通过paxos协议实现强一致集群。
+减少了角色，不过还是较难理解，传统的数据库比如MySQL也可以通过paxos协议实现强一致集群。 
 
 Raft：  
-简单版的Multi Paxos，划分3个子问题：
-1）怎么选leader
-2）怎么log Replicaion
-3）怎么保证Safety
-角色只包含了Leader，Follower，Candidate
-主要Raft容易理解是因为有[动画演示](http://thesecretlivesofdata.com/raft/)，[另一个动画演示](https://raft.github.io/)
+简单版的Multi Paxos，划分3个子问题：  
+1）怎么选leader  
+2）怎么log Replicaion  
+3）怎么保证Safety  
+角色只包含了Leader，Follower，Candidate  
+主要Raft容易理解是因为有[动画演示](http://thesecretlivesofdata.com/raft/)，[另一个动画演示](https://raft.github.io/)  
 
 几个关键点：  
 1）一个集群只有一个leader。  
@@ -80,11 +80,11 @@ zeekpeer看着就是一个文件夹，和普通的文件夹一样。
 ## 实践操作
 Zookeeper：  
 1）需要配置好文件系统path（每个节点不同的data文件夹）  
-2）需要设置文件端口和心跳端口  
-3）在每个server上需要配置好所有n个节点  
-4）在每个文件夹里还需要设置myid标识  
-5）启动命令例子  
-服务端
+2）需要设置文件端口和心跳端口   
+3）在每个server上需要配置好所有n个节点   
+4）在每个文件夹里还需要设置myid标识   
+5）启动命令例子   
+服务端  
 ```
 ## 启动每个zookeeper node
 bin/zkServer.sh start zoo1.cfg
