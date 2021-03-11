@@ -1,1 +1,7 @@
+列式分布式数据库，扩展很容易，它的数据模式（列的增减）的改动的成本是非常低的。
+
+一个应用就是比如user，还有很多follow的情况，那么user-follower关系表可以用cassandra，因为给一个用户增减follower消耗低不锁表。
+
+缺点一样，NoSQL导致Transaction问题，然后分布式始终还有各个node数据统一的消耗，最终一致还是慢。
+
 http://systemdesigns.blogspot.com/2016/01/cassandra-vs-dynamo.html
