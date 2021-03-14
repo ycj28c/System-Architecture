@@ -140,7 +140,7 @@ a.Sharding based on regions:
 
 b.Sharding based on LocationID：  
 我们的hash函数用LocationID进行map，当创建QuadTree的时候，迭代每个地点并计算每个LocaltionID的hash值来决定存放点。当搜索的时候，遍历所有服务器，每个服务器返回附近的地点，由中央汇总。  
-//TODO 这里不是很清晰
+这里其实就是一个map reduce的概念，实际搜索时候需要搜索所有的partition/shard，不像region只需要一轮搜索。
 
 Will we have different QuadTree structure on different partitions？  
 是的，不能保证每个分区的grid一样多，不过可以近似数量。不同服务器上不同的树结构并不会产生问题，因为我们在所有分区上会搜索半径内的neighboring grid。  
