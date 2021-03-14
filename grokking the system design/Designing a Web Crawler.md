@@ -98,4 +98,7 @@ https://www.1point3acres.com/bbs/thread-436948-1-1.html
 ### 9.Crawler Traps
 很多坑，比如网站的spammer扫描，被block等等。
 
+### 10.Other
+这里也有一些讨论，在10000台分布式机器的问答  
+https://leetcode.com/problems/web-crawler-multithreaded/discuss/617672/Anyone-have-answers-to-the-follow-up
 
