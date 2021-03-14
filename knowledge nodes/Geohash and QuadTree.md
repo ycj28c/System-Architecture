@@ -14,3 +14,29 @@ Geohash主要就是用来快速筛选附近地点的，具体求距离还是需�
 
 在这里有详细讲解：
 [高效的多维空间点索引算法 — Geohash 和 Google S2](https://halfrost.com/go_spatial_search/)
+
+一个QuadTree结构的例子
+```
+// Definition for a QuadTree node.
+class Node {
+    public List<Location> locations; //一个QuadTree最多存放500个地点
+    public boolean isLeaf; //只有叶子节点才存放地点数据
+    public Node topLeft;
+    public Node topRight;
+    public Node bottomLeft;
+    public Node bottomRight;
+
+    public Node() {
+        this.locations = new ArrayList();
+        this.isLeaf = false;
+        this.topLeft = null;
+        this.topRight = null;
+        this.bottomLeft = null;
+        this.bottomRight = null;
+    }
+};
+class Location {
+    public long latitude;
+    public long longtitude;
+}
+```
