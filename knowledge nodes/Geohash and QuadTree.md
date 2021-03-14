@@ -8,6 +8,8 @@ Geohash主要就是用来快速筛选附近地点的，具体求距离还是需�
 
 这段介绍Geohash也不错：[GeoHash核心原理解析](https://www.cnblogs.com/LBSer/p/3310455.html)
 
+Geohash很好的一点就可以每一位可以代表一个缩放地图的层级，所以Geohash可以直接定位，而且可以和latitude，longtitude直接转换，速度很快。
+
 ### QuadTree：
 或者Google s2算法，使用Hilbert填充曲线，将地球体投影到了6个平面正方形，然后4分块递归，计算每一片区域的cellID。块的放大缩小是4的次方，比较平滑，优点是没有边界的问题，一点在小坐标系和大坐标系位置变化也不大。
 具体使用就是直接使用cellID的坐标匹配就行了。64位的坐标，基本通过坐标就可以得知周围的坐标的。具体的看[Google S2 是如何解决空间覆盖最优解问题的](https://halfrost.com/go_s2_regioncoverer/)，细节不懂。
