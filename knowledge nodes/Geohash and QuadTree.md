@@ -21,21 +21,19 @@ Geohash很好的一点就可以每一位可以代表一个缩放地图的层级�
 ```
 // Definition for a QuadTree node.
 class Node {
-    public List<Location> locations; //一个QuadTree最多存放500个地点
+    //没有找到相关资料，不过我估计这里还需要4个顶角位置来确定范围
+    public Location topLeft;
+    public Location topRight;
+    public Location bottomLeft;
+    public Location bottomRight;
+    
     public boolean isLeaf; //只有叶子节点才存放地点数据
+    public List<Location> locations; //一个QuadTree最多存放500个地点
+    
     public Node topLeft;
     public Node topRight;
     public Node bottomLeft;
     public Node bottomRight;
-
-    public Node() {
-        this.locations = new ArrayList();
-        this.isLeaf = false;
-        this.topLeft = null;
-        this.topRight = null;
-        this.bottomLeft = null;
-        this.bottomRight = null;
-    }
 };
 class Location {
     public long latitude;
