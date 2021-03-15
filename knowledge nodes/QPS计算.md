@@ -11,3 +11,8 @@ QPS = req/sec = 请求数/秒
 
 问:如果一台机器的QPS是58，需要几台机器来支持？
 答:139 / 58 = 3
+
+QPS有什么用：
+* QPS = 100 用笔记本做web服务器就可以  
+* QPS = 1k 用一台好一点的web服务器就差不多，需要考虑Single Point Failure
+* QPS = 1m 需要假设一个1000台web服务器的集群，需要考虑如何Maintanance(某一台挂了怎么办)
