@@ -4,4 +4,21 @@
 
 缺点一样，NoSQL导致Transaction问题，然后分布式始终还有各个node数据统一的消耗，最终一致还是慢。
 
-http://systemdesigns.blogspot.com/2016/01/cassandra-vs-dynamo.html
+Cassandra是一个三层结构(三元组结构)的NoSQL数据库:
+插入数据：insert(row_key,column_key,value)
+
+##### 第一层：row_key
+又称为hash_key，cassandra会根据这个key计算一个hash值，然后决定这条数据存在哪  
+是传统我们所说的key-value中的key  
+任何查询都需要带上这个key，但无法进行range query  
+最常用的row_key:uer_id  
+##### 第二层：column_key
+是排序的，可以进行range query  
+可以按column指定顺序排序，支持按column范围查询query(row_key,column_start,column_end)  
+可以是复合值，比如是一个timestamp+user_id的组合  
+#### 第三层：value
+一般是string  
+如果需要存很多信息的话，可以自己做序列化  
+
+http://systemdesigns.blogspot.com/2016/01/cassandra-vs-dynamo.html  
+[从用户系统理解数据库和缓存](https://marian5211.github.io/2018/01/30/%E3%80%90%E4%B9%9D%E7%AB%A0%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1%E3%80%91%E4%BB%8E%E7%94%A8%E6%88%B7%E7%B3%BB%E7%BB%9F%E7%90%86%E8%A7%A3%E6%95%B0%E6%8D%AE%E5%BA%93%E5%92%8C%E7%BC%93%E5%AD%98/)  
