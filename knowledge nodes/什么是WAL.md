@@ -12,5 +12,6 @@ WAL(Write Ahead Log)预写日志，是数据库系统中常见的一种手段，
 
 操作前先写日志，然后定期checkpoint将日志写入snapshot。
 
+Master—Slave结构就是通过这个WAL来实现的。
 
 [什么是 WAL](https://zhuanlan.zhihu.com/p/137512843)
