@@ -37,6 +37,18 @@
 3.需要立刻返回处理结果的情况  
 NoSQL很多是Eventual consistency，就是说插入的数据不是马上能看到，这样不适合实时回馈的场景比如订票。
 
+### 其他
+还可以用一张表格帮助选择SQL/NoSQL
+
+| 特征                 | SQL  | NoSQL   | 
+|----------------------|---|---|
+| 是否需要支持 Transaction（NoSQL不支持TC） | 是 +1  | 否 +1   |
+| 是否需要丰富的 SQL Query（NoSQL只能简单query）  | 是 +1  | 否 +1   |
+| 是否需要Sequential ID（NoSQL的ID无序）  | 是 +1  | 否 +1  | 
+| 是否需要QPS要求高（NoSQL性能高）  | 否 +1  | 是 +1  | 
+| 是否对Scalability的要求高（SQL要程序员写分片）  | 否 +1  | 是 +1  | 
+
+然后按照分数选择一个DB
 
 ## Reference
 [NoSQL 还是 SQL ？这一篇讲清楚](https://juejin.cn/post/6844903654869172232)  
