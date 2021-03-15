@@ -183,7 +183,134 @@ PK(TweetID, UserID)
 *Search*  
 搜索包括indexing，ranking还有retrieval(检索)，一种类似的方法可以参考Design Twitter Search
 
-
-
-
+### 其他
+这里有一段tweet的模拟代码，挺有趣，来源[新鲜事系统](https://marian5211.github.io/2018/01/27/%E3%80%90%E4%B9%9D%E7%AB%A0%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1%E3%80%91%E6%96%B0%E9%B2%9C%E4%BA%8B%E7%B3%BB%E7%BB%9F/)
+```
+import javax.jws.soap.SOAPBinding;
+import java.util.*;
+public class DesignTwitter {
+    class Twitter {
+        HashMap<Integer,User> UsersList;
+        int tweetTimeStamp = 0;
+        class Tweet{
+            int id;
+            int userId;
+            int timeStamp;
+            Tweet(int id,int useId,int timeStamp){
+                this.id = id;
+                this.userId = useId;
+                this.timeStamp = timeStamp;
+            }
+        }
+        class User{
+            int uid;
+            List<Tweet> tweets = new ArrayList<>();
+            List<Integer> followers = new ArrayList<>();//被谁关注
+            List<Integer> followees = new ArrayList<>();//关注了谁
+            User(int uid){
+                this.uid = uid;
+            }
+        }
+        /** Initialize your data structure here. */
+        public Twitter() {
+            UsersList = new HashMap<>();
+        }
+        /** Compose a new tweet. */
+        public void postTweet(int userId, int tweetId) {
+            if(!UsersList.containsKey(userId)){
+                User user = new User(userId);
+                UsersList.put(userId,user);
+            }
+            Tweet tweet = new Tweet(tweetId,userId,tweetTimeStamp);
+            UsersList.get(userId).tweets.add(tweet);
+            tweetTimeStamp++;
+        }
+        /** Retrieve the 10 most recent tweet ids in the user's news feed. Each item in the news feed must be posted by users who the user followed or by the user herself. Tweets must be ordered from most recent to least recent. */
+        public List<Integer> getNewsFeed(int userId) {
+            List<Integer> feeds = new ArrayList<>();
+            if(!UsersList.containsKey(userId)){
+                User user = new User(userId);
+                UsersList.put(userId,user);
+                return feeds;
+            }
+            Comparator<Tweet> cmp = new Comparator<Tweet>(){
+                public int compare(Tweet t1,Tweet t2){
+                    return t2.timeStamp - t1.timeStamp;
+                }
+            };
+            Queue<Tweet> heap = new PriorityQueue<>(10,cmp);
+            //先处理自己的新鲜事
+            List<Tweet> ownTweets = UsersList.get(userId).tweets;
+            for(int i = ownTweets.size()-1;i >= ownTweets.size() - 10 && i >= 0;i--){
+                heap.add(ownTweets.get(i));
+            }
+            //处理关注的人的新鲜事
+            List<Integer> followees = UsersList.get(userId).followees;
+            for(Integer followee : followees){
+                List<Tweet> tweets = UsersList.get(followee).tweets;
+                for(int i = tweets.size()-1;i >= tweets.size() - 10 && i >= 0;i--){
+                    heap.add(tweets.get(i));
+                }
+            }
+            int k = 10;
+            while (k > 0 && !heap.isEmpty()){
+                feeds.add(heap.poll().id);
+                k--;
+            }
+            return feeds;
+        }
+        /** Follower follows a followee. If the operation is invalid, it should be a no-op. */
+        public void follow(int followerId, int followeeId) {
+            //如果没有用户，新建用户
+            if(!UsersList.containsKey(followeeId)){
+                User user = new User(followeeId);
+                UsersList.put(followeeId,user);
+            }
+            if(!UsersList.containsKey(followerId)){
+                User user = new User(followerId);
+                UsersList.put(followerId,user);
+            }
+            if(followeeId == followerId || UsersList.get(followerId).followees.contains(followeeId)){return;}
+            //更新用户关注和被关注列表
+            UsersList.get(followeeId).followers.add(followerId);
+            UsersList.get(followerId).followees.add(followeeId);
+        }
+        /** Follower unfollows a followee. If the operation is invalid, it should be a no-op. */
+        public void unfollow(int followerId, int followeeId) {
+            if(followeeId == followerId || !UsersList.containsKey(followeeId) || !UsersList.containsKey(followerId) ||
+                    !UsersList.get(followerId).followees.contains(followeeId) || !UsersList.get(followeeId).followers.contains(followerId)){
+                return;
+            }
+            Iterator<Integer> iterator =  UsersList.get(followeeId).followers.iterator();
+            while(iterator.hasNext()){
+                int i = iterator.next();
+                if(i == followerId){
+                    iterator.remove();
+                }
+            }
+            Iterator<Integer> iterator2 =  UsersList.get(followerId).followees.iterator();
+            while(iterator2.hasNext()){
+                int i = iterator2.next();
+                if(i == followeeId){
+                    iterator2.remove();
+                }
+            }
+        }
+    }
+    public void test(){
+        Twitter obj = new Twitter();
+        obj.postTweet(1,5);
+        List<Integer> param_2 = obj.getNewsFeed(1);
+        obj.follow(1,2);
+        obj.postTweet(2,6);
+        List<Integer> param_3 = obj.getNewsFeed(1);
+        obj.unfollow(1,2);
+        List<Integer> param_4 = obj.getNewsFeed(1);
+    }
+    public static void main(String[] args){
+        DesignTwitter test = new DesignTwitter();
+        test.test();
+    }
+}
+```
 
