@@ -104,6 +104,9 @@ Query service -- > Cluster Proxy(LB) ----------- > ShardA(A-F)
 这个LB可以是用户自己写的Cluster Proxy/Shard Service，需要满足自己的分片逻辑，比如根据首字母Range分片。  
 分区的配置文件通过Zookeeper统一管理，Zookeeper既保证配置文件一致，又可以监控机器在线退出和master，是个分布式强一致存储。
 
+## 其他
+具体的shard还设计到很多细节，比如要denormalize数据（像NoSQL一样用MySQL），要自己写shard service来路由shard之类，具体可以参考pinterest的那片文章。相对于cluster，shard更为繁琐，不过好处是在自己的掌控下，不会担心一个NoSQL的升级，bug或者宕机把当前的数据库全搞崩了，或者造成数据丢失。当然随着NoSQL技术的发展，界限也已经越来越小了，NoSQL对于ACID的支持也是越来越好了。所以一开始就考虑反范式设计Denormalization可能是未来的趋势？
+
 ## Reference
 1.[数据库分片（Database Sharding)详解](https://zhuanlan.zhihu.com/p/57185574)  
 2.[MongoDB Shard Keys](https://docs.mongodb.com/manual/core/sharding-shard-key/#sharding-shard-key-selection)  
