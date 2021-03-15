@@ -181,6 +181,68 @@ How can each cache replica be updated?
 用户是否可以生成private url，或者某个url只允许特定的用户访问？  
 我们可以记录每个url的访问权限（public或者private），当然也可以创建一个单独的table用来记录可以访问该url的用户列表，如果用户无权限访问就返回401错误。在存储上因为使用的是NoSQL比如Cassandra，所以key是Hash（或者KGS生成的Key），而column值就是所有有权限访问的userID。
 
+### 其他
+这里还有一些补充细节，来源于[一致性哈希&短网址系统设计](https://marian5211.github.io/2018/03/05/%E3%80%90%E4%B9%9D%E7%AB%A0%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1%E3%80%91%E4%B8%80%E8%87%B4%E6%80%A7%E5%93%88%E5%B8%8C-%E7%9F%AD%E7%BD%91%E5%9D%80%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1/)
+
+##### 服务器的提速：  
+1.利用地理位置信息加速  
+2.优化服务器速度  
+3.不同地区，使用不同Web服务器，通过DNS解析不同地区的用户到不同的服务器  
+4.优化数据访问速度，使用Centralized MySQL + Distributed Memcached。数据库共享一个，不同地区设置多个缓存，一个MySQL配多个Memcached, Memcached跨地区分布  
+
+##### 数据库扩展：  
+1.什么时候需要扩展多台服务器？  
+1)Cache资源不够  
+2)写操作越来越多   
+3)请求太多，无法通过Cache满足
+
+2.增加多台数据库可以优化什么？
+1)解决存不下的问题——Storage角度（TinyURL一般遇不到这种问题）
+2)解决忙不过来的问题——QPS角度
+
+3.如何解决TinyURL忙不过来的问题？  
+拆分。纵向切分？不同列放不同数据库？不可行！必须横向拆分。Shard的核心就是减少数据量和QPS。
+
+4.如何横向拆分数据库？  
+要选择用哪个key来做shard，如果用longURL做为sharding key，那么每次查询都要广播到所有数据库，并没有减少每个数据库的QPS。  
+那么就是用shortURL来做shard了，我们按照简单的ID%N来进行Shard（如果考虑到未来的情况，就一次性shard10倍的量，一台机器上N个库就行）  
+
+short2long的情况：   
+1)将shortURL转化为ID  
+2)根据ID计算找到数据库  
+3)在该数据库中查询longURL即可  
+
+long2short的情况：  
+1）先查询：广播给N台数据库，查询是否存在，似乎有点耗时，但是也是可行的，因为数据库服务器不会太多  
+2）再插入如果不存在的话，获得下一个自增ID值，插入对应数据库  
+3）其实也不可以不查询直接插入，因为long2short没有必要意义对应，一个long可以对应多个short，也就是说可以把长网址转成多个短网址，但是一旦用户获得一个短网址，相同的短网址只能对应一个长网址。  
+
+5.如何在多台数据库服务器上获取全局递增的ID  
+1)专门用一台服务器负责自增ID服务，不存储数据，也不负责查询
+2)用Zookeeper
+3)每个数据库递增N的倍数id  
+但用全局递增ID不是解决TinyURL的好办法
+
+6.更好的shard方法，无需全局递增ID   
+(比如著名的snowflake，在ID里面也包含了shard机器等信息，可以直接用来找数据了)
+
+如果最开始shortkey为6位，那就增加一位前置位：AB1234 –> 0AB1234  
+该前置位由hash(long_url)%62得到，可以用consistent hash算法，因此是唯一的。这个前置位可以作为机器的ID等
+
+另一种做法，把第一位单独留出来做sharding key，总共还是6位，该前置位为sharding key
+
+这样我们就可以同时通过shortURL和longURL得到sharding key。无需广播。
+无论short2long还是long2short都可直接定位数据所在服务器：  
+1）当新加入一个longURL时，先通过hash(long_url)%62得到机器ID，然后在该机器上，通过该台机器的自增ID通过进制转换得到6位shortkey。  
+2）用户已知shortURL时，先按第一位获取到机器ID，然后在此机器上查询longURL
+
+##### Multi region 的进一步优化:
+重写数据库到中国，中国用户访问中国数据库。一致性问题如何解决？很难解决
+
+想一想用户习惯：  
+中国的用户一般访问的网站是中国的，美国的用户一般访问的网站是美国的，中国用户访问时，会被DNS分配中国的服务器。  
+因此我们可以用地域信息进行sharding，也就是说按照网站的地域信息将其数据分开存储在不同地方的数据库中。  
+
 ## 总结
 核心问题就是key的产生，一种是动态的MD5+Base64实时产生，不过有重复问题（可以用加上时间戳解决，不过还是有容量问题），另外一种就是独立的KGS系统预先生成。另外一个核心就是concurrency的解决，多个服务器共同访问如果处理，处理方式就是一旦请求了url，KGS就放入到已用table。至于scale部分，都是老套路，nosql可以直接partition，增加LB啊，增加cache等等。
 
