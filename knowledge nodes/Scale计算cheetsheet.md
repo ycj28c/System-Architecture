@@ -52,6 +52,10 @@ Elastic search: 搜索QPS 1700 (2000)
 Rocket MQ: 10,000 QPS  
 Kafka: 单机TPS写入1M  
 
+## 硬盘性能
+普通硬盘一次寻轨（移动磁头）是10ms，ssd可以达到0.2ms  
+普通硬盘顺序读取文件可以达到80MB/s  
+
 ## Reference
 1.[一文看懂 Mbps、Mb/s、MB/s 有什么区别](https://www.ithome.com/0/437/491.htm)  
 2.[bit、byte、位、字节、汉字的关系](https://blog.csdn.net/bigapple88/article/details/5601295)  

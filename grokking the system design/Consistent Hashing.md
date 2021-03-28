@@ -41,6 +41,8 @@ for(i=1  -->  N) // N为每个server对应的分片数量
 ### 缺陷
 一致性哈希算法Consistent Hashing并不是强一致性，也不是高可用方案，如果server挂了数据丢了就是丢了，除非有恢复手段，它只是一种减少由扩缩容引起的命中率下降的手段。
 
+所以对于有状态的服务器，比如存放session或者socket，并不能很好的解决。这里有个很好的讨论[某分布式应用实践一致性哈希的一些问题](https://timyang.net/architecture/consistent-hashing-practice/)
+
 ## Reference
 [一致性Hash(Consistent Hashing)原理剖析](https://blog.csdn.net/lihao21/article/details/54193868)  
 [Java一致性Hash算法的实现](https://blog.csdn.net/flyfeifei66/article/details/82458618)
