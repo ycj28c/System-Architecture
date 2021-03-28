@@ -93,7 +93,7 @@ read("b.txt")
 
 设计GFS系统的分布式存储系统，挺有意思的。
 要把文件拆分成为多个chunk，然后插入到各个服务器中去，read的时候根据index信息读取完整内容。
-```
+
 /* Definition of BaseGFSClient
  * class BaseGFSClient {
  *     private Map<String, String> chunk_list;
@@ -203,5 +203,4 @@ public class GFSClient extends BaseGFSClient {
         }
     }
 }
-```
 ```
