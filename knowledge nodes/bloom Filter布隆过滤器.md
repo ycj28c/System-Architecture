@@ -1,5 +1,6 @@
 其实在算法题中对string进行hash经常会用到，就类似一个sliding windows存放。不过bloom Filter有其他的应用场景。
 
+## 应用场景
 1)垃圾邮件地址过滤(地址数量很庞大)  
 2)爬虫URL地址去重  
 3)解决缓存击穿问题  
@@ -7,12 +8,34 @@
 5)google 分布式数据库Bigtable以及Hbase使用布隆过滤器来查找不存在的行或列，以减少磁盘查找的IO次数  
 6)文档存储检索系统也可以采用布隆过滤器来检测先前存储的数据  
 
-二、Bloom Filter的特点：  
+## Bloom Filter的特点：  
 1>、不存在漏报（False Negative），即某个元素在某个集合中，肯定能报出来。  
 2>、可能存在误报（False Positive），即某个元素不在某个集合中，可能也被爆出来。  
 3>、确定某个元素是否在某个集合中的代价和总的元素数目无关。  
 
 简单说就是用速度换准确度
+
+## 具体的实现  
+1.Standard Bloom Filter  
+就是hash后的标志位置是0或者1，比较快
+
+2.Counting Bloom Filter  
+就是hash后的标志位置是一个数，这样可以处理数据删除和修改的情况
+
+实际的hash function可能有多个，对于一个data可能会标记多个数据位，来增加准确性（和Bloom Filter的hash长度也有密切关系）。
+
+## 和HashMap的区别
+比hashmap的占用空间明显少很多，hashmap需要存放所有数据，而bloom filter只存放检验数据。比如Bigtable就在每一个块内设置了bloom filter，快速检查数据是否存在，只要不存在直接跳到下一块，加快检索速度。  
+
+有一个题目：  
+如果A和B都有大量的URL数据，内存放不下，如果要找到A和B的交集URL，怎么处理？  
+答案就是使用bloom filter，这样不用存放具体的url（每个url还是比较长的，很占空间），先将所有A的URL进行bloom filter，然后遍历B，只要B的url也存在于bloom filter，就是交集。缺点就是可能存在误报。通常的误报率大概3% - 4%。
+
+## Bloom Filter的扩容
+Bloom Filter对于扩容支持不太好，如果一开始的array长度是10，当数据量变大，我们需要array长度100的时候，该怎么做？  
+
+做法是保留原array不变，新建一个长读100的array，新的数据只加入到新的array，每次检索同时要检索所有bloom filter，只要一个说positive那么就算positive。  
+缺点很明显，速度明显变慢，误报率明显变高。
 
 ## Reference
 [bloom Filter布隆过滤器简介](https://www.jianshu.com/p/51e40483911f)  
