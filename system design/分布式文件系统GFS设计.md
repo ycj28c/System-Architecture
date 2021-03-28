@@ -62,4 +62,146 @@ commodity server
 
 至此，我们需要至少40台机器。就可以满足设计的需求了。
 
+### 一个GFS代码示例
 
+```
+Description
+Implement a simple client for GFS (Google File System, a distributed file system), it provides the following methods:
+
+read(filename). Read the file with given filename from GFS.
+write(filename, content). Write a file with given filename & content to GFS.
+There are two private methods that already implemented in the base class:
+
+readChunk(filename, chunkIndex). Read a chunk from GFS.
+writeChunk(filename, chunkIndex, chunkData). Write a chunk to GFS.
+To simplify this question, we can assume that the chunk size is chunkSize bytes. (In a real world system, it is 64M). The GFS Client's job is splitting a file into multiple chunks (if need) and save to the remote GFS server. chunkSize will be given in the constructor. You need to call these two private methods to implement read & write methods.
+
+Have you met this question in a real interview?  
+Example
+GFSClient(5)
+read("a.txt")
+>> null
+write("a.txt", "World")
+>> You don't need to return anything, but you need to call writeChunk("a.txt", 0, "World") to write a 5 bytes chunk to GFS.
+read("a.txt")
+>> "World"
+write("b.txt", "111112222233")
+>> You need to save "11111" at chunk 0, "22222" at chunk 1, "33" at chunk 2.
+write("b.txt", "aaaaabbbbb")
+read("b.txt")
+>> "aaaaabbbbb"
+
+设计GFS系统的分布式存储系统，挺有意思的。
+要把文件拆分成为多个chunk，然后插入到各个服务器中去，read的时候根据index信息读取完整内容。
+```
+/* Definition of BaseGFSClient
+ * class BaseGFSClient {
+ *     private Map<String, String> chunk_list;
+ *     public BaseGFSClient() {}
+ *     public String readChunk(String filename, int chunkIndex) {
+ *         // Read a chunk from GFS
+ *     }
+ *     public void writeChunk(String filename, int chunkIndex,
+ *                            String content) {
+ *         // Write a chunk to GFS
+ *     }
+ * }
+ */
+public class GFSClient extends BaseGFSClient {
+    class Chunk {
+        int chunkId;
+        String content;
+        public Chunk(int chunkId, String content){
+            this.chunkId = chunkId;
+            this.content = content;
+        }
+    }
+    class ChunkIndex {
+        int chunkId;
+        int serverId;
+        public ChunkIndex(int chunkId, int serverId){
+            this.chunkId = chunkId;
+            this.serverId = serverId;
+        }
+    }
+    //需要Index
+    Map<String, List<ChunkIndex/*chunkId*/>> index;
+    //需要server
+    Map<Integer/*serverId*/, Map<Integer/*chunkId*/, Chunk>> servers;
+    
+    private int globalchunkId;
+    private int chunkSize;
+    private int serverNum = 5; //假设服务器是0-4
+    /*
+     * @param chunkSize: An integer
+     */
+    public GFSClient(int chunkSize) {
+        // do intialization if necessary
+        this.chunkSize = chunkSize;
+        this.globalchunkId = 0;
+        index = new HashMap<>();
+        servers = new HashMap<>();
+    }
+
+    /*
+     * @param filename: a file name
+     * @return: conetent of the file given from GFS
+     */
+    public String read(String filename) {
+        // write your code here
+        if(!index.containsKey(filename)){
+            return null;
+        }
+        StringBuilder sb = new StringBuilder();
+        for(ChunkIndex chunkIdx : index.get(filename)){
+            String content = servers.get(chunkIdx.serverId).get(chunkIdx.chunkId).content;
+            sb.append(content);
+        }
+        return sb.toString();
+    }
+
+    /*
+     * @param filename: a file name
+     * @param content: a string
+     * @return: nothing
+     * 注意这里如果已经有存在的文件了，是override，不是append
+     */
+    public void write(String filename, String content) {
+        if(index.containsKey(filename)){
+            delete(filename);
+        }
+        appendWrite(filename, content);
+    }
+
+    private void delete(String filename){
+        for(ChunkIndex chunkIdx : index.get(filename)){
+            servers.get(chunkIdx.serverId).remove(chunkIdx.chunkId);
+        }
+        index.remove(filename);
+    }
+
+    private void appendWrite(String filename, String content){
+        // write your code here
+        int offset = 0;
+        int serverIdx = 0;
+        while(offset < content.length()){
+            int curChunkId = globalchunkId++;
+            Chunk chunk;
+            if(offset + chunkSize <= content.length()){
+                chunk = new Chunk(curChunkId, content.substring(offset, offset + chunkSize));
+                offset += chunkSize;
+            } else {
+                chunk = new Chunk(curChunkId, content.substring(offset));
+                offset += content.length();
+            }
+            serverIdx %= serverNum;
+            ChunkIndex chunkIdx = new ChunkIndex(curChunkId, serverIdx);
+            
+            servers.computeIfAbsent(serverIdx, x-> new HashMap<>()).put(curChunkId, chunk);
+            index.computeIfAbsent(filename, x-> new ArrayList<>()).add(chunkIdx);
+            serverIdx++;
+        }
+    }
+}
+```
+```
