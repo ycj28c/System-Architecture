@@ -10,6 +10,79 @@ Geohash主要就是用来快速筛选附近地点的，具体求距离还是需�
 
 Geohash很好的一点就可以每一位可以代表一个缩放地图的层级，所以Geohash可以直接定位，而且可以和latitude，longtitude直接转换，速度很快。
 
+Geohash和location的转换代码
+```
+public class GeoHash {
+    /*
+     * @param latitude: one of a location coordinate pair 
+     * @param longitude: one of a location coordinate pair 
+     * @param precision: an integer between 1 to 12
+     * @return: a base32 string
+     * 
+     * 输入: 
+     * lat = 39.92816697 
+     * lng = 116.38954991
+     * precision = 12 
+     * 输出: "wx4g0s8q3jf9"
+     * 
+     * 纬度latitude：-90~90
+     * 经度longitude：-180～180
+     * 经纬各生成一个30位的二进制数：2分法，>mid取1，<=mid取0
+     * 先经度再纬度，把2个二进制数合并成一个60位的二进制数
+     * 32 = 2^5
+     * 对2进制数每5位作为一个数转换成integer，转换成的integer在0~32之间，在base32数组中取integer对应位的char
+     * precision: 取前x 位的char
+     * 前p位char: 5* p位数，对每个维度取 5* p／2 + 1个digit即可
+     */
+    final String BASE32 = "0123456789bcdefghjkmnpqrstuvwxyz";
+    public String encode(double latitude, double longitude, int precision) {
+        // write your code here
+        int len = (precision + 1) / 2 * 5;
+        System.out.println(len);
+        String latBitStr = getBit(latitude, -90.0, 90.0, len);
+        String lngBitStr = getBit(longitude, -180.0, 180.0, len);
+        
+        String geoBitStr = combine(latBitStr, lngBitStr);
+        //这里注意只取精度位，有可能超过精度的
+        return getGeoHash(geoBitStr).substring(0, precision);
+    }
+    private String getGeoHash(String geoBitStr){
+        int start = 0;
+        StringBuilder sb = new StringBuilder();
+        while(start < geoBitStr.length()){
+            String piece = geoBitStr.substring(start, start + 5);
+            int bit = Integer.parseInt(piece, 2);
+            sb.append(BASE32.charAt(bit));
+            start += 5;
+        }
+        return sb.toString();
+    }
+    private String combine(String latBitStr, String lngBitStr){
+        StringBuilder sb = new StringBuilder();
+        for(int i=0;i<latBitStr.length();i++){
+            sb.append(lngBitStr.charAt(i));
+            sb.append(latBitStr.charAt(i));
+        }
+        return sb.toString();
+    }
+    private String getBit(double lat, double left, double right, int len){
+        StringBuilder sb = new StringBuilder();
+        
+        for(int i=0;i<len;i++){
+            double mid = left + (right - left) / 2;
+            if(lat <= mid){
+                sb.append("0");
+                right = mid;
+            } else {
+                sb.append("1");
+                left = mid;
+            }
+        }
+        return sb.toString();
+    }
+}
+```
+
 ### QuadTree：
 或者Google s2算法，使用Hilbert填充曲线，将地球体投影到了6个平面正方形，然后4分块递归，计算每一片区域的cellID。块的放大缩小是4的次方，比较平滑，优点是没有边界的问题，一点在小坐标系和大坐标系位置变化也不大。
 具体使用就是直接使用cellID的坐标匹配就行了。64位的坐标，基本通过坐标就可以得知周围的坐标的。具体的看[Google S2 是如何解决空间覆盖最优解问题的](https://halfrost.com/go_s2_regioncoverer/)，细节不懂。
