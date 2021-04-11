@@ -42,7 +42,7 @@ Nginx: 最高300,000 QPS
 Tomcat：20,000 QPS  
 
 ## 数据库数值
-Mysql: 1000 QPS (max 4k)    
+Mysql: 1000 QPS (max 4k), SSD硬盘可以达到10K    
 NoSQL Database(比如Cassandra): 10K QPS  
 Redis: 80,000 QPS (max 100,000)   
 Memcached Cache: 1,000,000 QPS  
