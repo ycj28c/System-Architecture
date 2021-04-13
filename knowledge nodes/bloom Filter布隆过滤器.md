@@ -37,6 +37,123 @@ Bloom Filter对于扩容支持不太好，如果一开始的array长度是10，�
 做法是保留原array不变，新建一个长读100的array，新的数据只加入到新的array，每次检索同时要检索所有bloom filter，只要一个说positive那么就算positive。  
 缺点很明显，速度明显变慢，误报率明显变高。
 
+## 代码演示
+普通版BloomFiler（多个Hash Function）
+```
+public class StandardBloomFilter {
+    class HashFunction {
+      public int cap, seed;
+
+      public HashFunction(int cap, int seed) {
+        this.cap = cap;
+        this.seed = seed;
+      }
+
+      public int hash(String value) {
+        int ret = 0;
+        int n = value.length();
+        for (int i = 0; i < n; ++i) {
+          ret += seed * ret + value.charAt(i);
+          ret %= cap;
+        }
+        return ret;
+      }
+    }
+
+    public BitSet bits;
+    public int k;
+    public List<HashFunction> hashFunc;
+
+    public StandardBloomFilter(int k) {
+      this.k = k;
+      hashFunc = new ArrayList<HashFunction>();
+      for (int i = 0; i < k; ++i) {
+        hashFunc.add(new HashFunction(100000 + i, 2 * i + 3));
+      }
+      bits = new BitSet(100000 + k);
+    }
+
+    public void add(String word) {
+      for (int i = 0; i < k; ++i) {
+        int position = hashFunc.get(i).hash(word);
+        bits.set(position);
+      }
+    }
+
+    public boolean contains(String word) {
+      for (int i = 0; i < k; ++i) {
+        int position = hashFunc.get(i).hash(word);
+        if (!bits.get(position)) {
+          return false;
+        }
+      }
+      return true;
+    }
+}
+```
+
+计数版BloomFilter  
+和普通版的BloomFilter几乎一样，主要区别在于使用int[]来统计而不是BitSet/boolean[]，这样就可以对Hash的结果进行统计（加减）  
+```
+public class CountingBloomFilter {
+
+    class HashFunction {
+      public int cap, seed;
+
+      public HashFunction(int cap, int seed) {
+        this.cap = cap;
+        this.seed = seed;
+      }
+
+    public int hash(String value) {
+      int ret = 0;
+      int n = value.length();
+      for (int i = 0; i < n; ++i) {
+        ret += seed * ret + value.charAt(i);
+        ret %= cap;
+      }
+      return ret;
+    }
+  }
+  
+  public int[] bits;
+  public int k;
+  public List<HashFunction> hashFunc;
+
+  public CountingBloomFilter(int k) {
+      this.k = k;
+      hashFunc = new ArrayList<HashFunction>();
+      for (int i = 0; i < k; ++i) {
+        hashFunc.add(new HashFunction(100000 + i, 2 * i + 3));
+      }
+      bits = new int[100000 + k];
+  }
+
+  public void add(String word) {
+    for (int i = 0; i < k; ++i) {
+      int position = hashFunc.get(i).hash(word);
+      bits[position] += 1;
+    }
+  }
+
+  public void remove(String word) {
+    for (int i = 0; i < k; ++i) {
+      int position = hashFunc.get(i).hash(word);
+      bits[position] -= 1;
+    }
+  }
+
+  public boolean contains(String word) {
+    for (int i = 0; i < k; ++i) {
+      int position = hashFunc.get(i).hash(word);
+      if (bits[position] <= 0)
+      return false;
+    }
+    return true;
+  }
+}
+```
+
 ## Reference
 [bloom Filter布隆过滤器简介](https://www.jianshu.com/p/51e40483911f)  
 [海量数据处理算法—Bloom Filter](https://blog.csdn.net/hguisu/article/details/7866173)
