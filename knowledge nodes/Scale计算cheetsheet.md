@@ -55,6 +55,7 @@ Kafka: 单机TPS写入1M
 ## 硬盘性能
 普通硬盘一次寻轨（移动磁头）是10ms，ssd可以达到0.2ms  
 普通硬盘顺序读取文件可以达到80MB/s(Throughput)  
+SSD硬盘用闪存，Throughput再500MB/s以上
 
 ## 内存性能
 内存的latency大概100ns，可以忽略，Throughput大概100GB/s  
