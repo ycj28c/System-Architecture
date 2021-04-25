@@ -4,6 +4,7 @@
 
 缺点一样，NoSQL导致Transaction问题，然后分布式始终还有各个node数据统一的消耗，最终一致还是慢。
 
+## Cassandra存储结构
 Cassandra是一个三层结构(三元组结构)的NoSQL数据库:
 插入数据：insert(row_key,column_key,value)
 
@@ -45,4 +46,5 @@ LSM Tree是一个架构，不是一种数据结构。基于GFS。
 ## Reference
 [Dynamo扩展篇 —— Cassandra VS Dynamo](http://systemdesigns.blogspot.com/2016/01/cassandra-vs-dynamo.html)  
 [从用户系统理解数据库和缓存](https://marian5211.github.io/2018/01/30/%E3%80%90%E4%B9%9D%E7%AB%A0%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1%E3%80%91%E4%BB%8E%E7%94%A8%E6%88%B7%E7%B3%BB%E7%BB%9F%E7%90%86%E8%A7%A3%E6%95%B0%E6%8D%AE%E5%BA%93%E5%92%8C%E7%BC%93%E5%AD%98/)  
+[HBase、MongoDB、cassandra比较](https://www.cnblogs.com/yanduanduan/p/10563678.html)  
 
