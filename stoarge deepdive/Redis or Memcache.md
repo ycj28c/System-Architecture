@@ -8,7 +8,7 @@ redis 和memcached都支持集群
 
 2）数据类型  
 Redis支持的数据类型要丰富得多,Redis不仅仅支持简单的k/v类型的数据，同时还提供String，List,Set,Hash,Sorted Set,pub/sub,Transactions数据结构的存储。其中Set是HashMap实现的，value永远为null而已
-memcache支持简单数据类型，需要客户端自己处理复杂对象 
+memcache支持简单数据类型，需要客户端自己处理复杂对象。可以认为只支持text，需要序列化和反序列化object。   
 
 3）性能  
 Redis只能使用单线程，性能受限于CPU性能，故单实例CPU最高才可能达到5-6wQPS每秒（取决于数据结构，数据大小以及服务器硬件性能，日常环境中QPS高峰大约在1-2w左右）。Memcached可以利用多核优势，单实例吞吐量极高，可以达到几十万QPS（取决于key、value的字节大小以及服务器硬件性能，日常环境中QPS高峰大约在4-6w左右）。适用于最大程度扛量。
